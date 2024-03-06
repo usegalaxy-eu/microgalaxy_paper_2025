@@ -1,0 +1,7 @@
+name: microgalaxy_technical_paper
+channels:
+- conda-forge
+- defaults
+dependencies:
+- jupyter
+- pandas
