@@ -3,7 +3,7 @@
 rm(list = ls())
 gc()
 
-# load libraries -------------------
+# load libraries
 
 library(data.table)
 library(stringr)
@@ -16,19 +16,27 @@ library(extrafont)
 library(ggh4x)
 
 library(ggrepel)
+library(dplyr)
+library(readr)
 
-# reading input data ------------------------------
 
-df = "input/tools_microGalaxy.tsv" |> fread()
+# reading input data
 
-# Column to exclude ----------------
+tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/main/results/microgalaxy/tools.tsv"
+
+df <- read_tsv(tools_url)
+glimpse(df)
+#df = "input/tools_microGalaxy.tsv" |> fread()
+
+
+# Column to exclude
 
 df$`Galaxy tool ids` = NULL
 df$Description       = NULL
 
 df$`bio.tool id`          = NULL
 df$`bio.tool name`        = NULL
-df$`bio.tool description` = NULL    
+df$`bio.tool description` = NULL
 
 df$Source            = NULL
 
@@ -43,9 +51,9 @@ df$`https://usegalaxy.eu`     = NULL
 df$`https://usegalaxy.org`    = NULL
 df$`https://usegalaxy.org.au` = NULL
 
-df = df[which(`To keep`)]
+# df = df[which(`To keep`)]
 
-# EDAM operation plot ----------------------
+# EDAM operation plot
 
 df2 = df |>
     tidyr::separate_rows("EDAM operation", sep = ",") |>
@@ -158,7 +166,7 @@ gr1 = ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (202
     
 
 ggsave(
-    plot = gr1, filename = "EDAM_operation.jpeg",
+    plot = gr1, filename = "results/EDAM_operation.png",
     width = 12, height = 9, units = "in", dpi = 600
 )    
 
@@ -273,7 +281,7 @@ gr2 = ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (202
 
 
 ggsave(
-    plot = gr2, filename = "EDAM_topic.jpeg",
+    plot = gr2, filename = "results/EDAM_topic.png",
     width = 12, height = 9, units = "in", dpi = 600
 )
 
@@ -290,16 +298,3 @@ ggsave(
 #         legend.position = "bottom",
 #         legend.justification = "left"
 #     )
-
-
-
-
-
-
-
-
-
-
-
-
-
