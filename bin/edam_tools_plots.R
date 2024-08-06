@@ -20,7 +20,7 @@ library(readr)
 
 # reading input data
 
-tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/main/results/microgalaxy/tools.tsv"
+tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/results/microgalaxy/tools.tsv"
 
 df <- read_tsv(tools_url)
 glimpse(df)
