@@ -1,0 +1,424 @@
+---
+title: "tools-graphs"
+author: "Nikos Pechlivanis"
+date: "2024-08-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## `libraries`
+
+```{r message=FALSE}
+library(data.table)
+library(stringr)
+
+library(ggplot2)
+library(ggrepel)
+library(ggtext)
+library(ggh4x)
+
+library(extrafont)
+```
+
+## Input dataset
+
+```{r message=FALSE}
+tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/results/microgalaxy/tools.tsv"
+
+tools_dt <- tools_url |> fread()
+```
+
+### Exclude unnecessary columns
+
+```{r}
+tools_dt$`Galaxy tool ids` = NULL
+tools_dt$Description       = NULL
+
+tools_dt$`bio.tool id`          = NULL
+tools_dt$`bio.tool name`        = NULL
+tools_dt$`bio.tool description` = NULL
+
+tools_dt$Source            = NULL
+
+tools_dt$`Conda id`      = NULL
+tools_dt$`Conda version` = NULL
+
+tools_dt$`Galaxy wrapper owner`   = NULL
+tools_dt$`Galaxy wrapper source`  = NULL
+tools_dt$`Galaxy wrapper version` = NULL
+tools_dt$`Galaxy wrapper parsed folder` = NULL
+```
+
+## Tool Availability
+
+```{r}
+# extract only availability information --------------------
+
+index <- tools_dt |> colnames() |> str_subset("Tools available on")
+
+availability <- tools_dt[, c("Galaxy wrapper id", index), with = FALSE] |> unique()
+
+colnames(availability) <- availability |> colnames() |> str_remove_all("Tools|available|on|\\ ")
+
+# Hierarchical clustering ---------------------
+
+mm <- availability[, -1] |> 
+    setDF(rownames = availability$Galaxywrapperid) |> 
+    as.matrix()
+
+mm_c <- mm |> dist(method = "euclidean") |> hclust(method = "ward.D2")
+mm_r <- t(mm) |> dist(method = "euclidean") |> hclust(method = "ward.D2")
+
+# plotting data -----------------------
+
+d = availability |> melt(id.vars = "Galaxywrapperid", variable.factor = FALSE, value.factor = FALSE)
+
+d$Galaxywrapperid = d$Galaxywrapperid |> factor(levels = mm_c$labels[mm_c$order |> rev()])
+d$variable = d$variable |> factor(levels = mm_r$labels[mm_r$order |> rev()])
+
+# plot ---------------------
+
+c <- d[which(value >= 2)] |> 
+    
+    ggplot(aes(Galaxywrapperid, variable)) + 
+    
+    geom_tile(aes(fill = value), color = "grey96") + 
+    
+    scale_fill_stepsn(
+        colors = c('#00429d', '#5681b9', '#93c4d2', '#ffa59e', '#dd4c65', '#93003a'),
+        guide = guide_colorsteps(barwidth = unit(.5, "lines"), barheight = unit(8, "lines"))
+    ) +
+    
+    theme_minimal(base_family = "Calibri") +
+    
+    theme(
+        legend.position = "right",
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+        
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(linetype = "dashed", lineend = "round")
+    ) +
+    
+    labs(x = "Galaxy wrapper ID", y = "Tools available on",
+         fill = "No. of Tools")
+
+
+
+```
+
+## EDAM Operation
+
+```{r}
+df2 = tools_dt |>
+    tidyr::separate_rows("EDAM operation", sep = ",") |>
+    setDT()
+
+df2 = df2[which(
+    `Total tool usage (usegalaxy.eu)` != 0 & 
+        `No. of tool users (2022-2023) (usegalaxy.eu)` != 0
+)]
+
+df2$`EDAM operation` = df2$`EDAM operation` |> str_squish()
+
+df2$`EDAM operation` = ifelse(df2$`EDAM operation` == "", "No Operation", df2$`EDAM operation`)
+
+st = df2[, by = `EDAM operation`, .(N = `Galaxy wrapper id` |> unique() |> length())]
+st = st[order(-N)]
+st = st[seq_len(11)]
+
+df2$cluster = ifelse(
+    df2$`EDAM operation` %in% st$`EDAM operation`,
+    df2$`EDAM operation`, "Other Operations"
+)
+
+df2 = df2[, c(
+    "Galaxy wrapper id", 
+    "Total tool usage (usegalaxy.eu)", 
+    "No. of tool users (2022-2023) (usegalaxy.eu)", 
+    "cluster"
+)] |> unique()
+
+
+
+df2[, by = cluster, N := `Galaxy wrapper id` |> unique() |> length()]
+
+df2$cluster = df2$cluster |> 
+    factor(
+        levels = c(
+            st$`EDAM operation` |> str_subset("No Operation", negate = TRUE), 
+            "Other Operations", "No Operation"
+        )
+    )
+
+df2 = df2[order(cluster)]
+
+df2$strip = paste0("**", df2$cluster, "** (", df2$N, " tools)")
+df2$strip = df2$strip |> factor(levels = df2$strip |> unique())
+
+h0 = rbind(
+    df2[, by = strip, .SD[which.max(`Total tool usage (usegalaxy.eu)`)]],
+    df2[, by = strip, .SD[which.max(`No. of tool users (2022-2023) (usegalaxy.eu)`)]]
+) |> unique()
+
+
+a <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
+    
+    geom_smooth(
+        data = df2[which(N >= 15)], 
+                aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`),
+                method = "lm", se = FALSE, lineend = "round", linewidth = .75
+    ) +
+    
+    geom_point(shape = 21, size = 2, stroke = .2, color = "grey96", fill = "#2E2A2B") +
+    
+    geom_text_repel(
+        data = h0, inherit.aes = FALSE, 
+        mapping = aes(
+            `Total tool usage (usegalaxy.eu)`, 
+            `No. of tool users (2022-2023) (usegalaxy.eu)`, 
+            label = `Galaxy wrapper id`
+        ),
+        bg.color = "grey96", family = "Calibri", box.padding = .5,
+        segment.size = .3
+    ) +
+    
+    scale_x_continuous(
+        trans = "log10",  # expand = c(0, 0), 
+        limits = c(1, 10000000), 
+        breaks = scales::trans_breaks("log10", function(x) 10^x),
+        labels = scales::trans_format("log10", scales::math_format(10^.x))
+    ) +
+    
+    scale_y_continuous(
+        trans = "log10", # limits = c(1, 10000),
+        labels = scales::comma, # expand = c(0, 0), 
+        breaks = c(.1, 1, 10, 100, 1000, 10000)
+    ) +
+    
+    facet_wrap(vars(strip), nrow = 3, axes = "all") +
+    
+    coord_cartesian() +
+    
+    theme_minimal(base_family = "Calibri") +
+    
+    theme(
+        legend.position = "bottom",
+        legend.justification = "left",
+        
+        strip.text = element_markdown(),
+        
+        axis.title.x = element_markdown(margin = margin(t = 10)),
+        axis.title.y = element_markdown(margin = margin(r = 10)),
+        
+        axis.ticks = element_line(linewidth = .3),
+        
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(linewidth = .3, linetype = "dashed", color = "grey75"),
+        
+        panel.border = element_rect(linewidth = .3, fill = NA),
+        
+        plot.margin = margin(20, 20, 20, 20)
+    ) +
+    
+    labs(
+        x = "**Total tool usage** (usegalaxy.eu)",
+        y = "**No. of tool users 2022-2023** (usegalaxy.eu)"
+    )
+```
+
+## EDAM topic
+
+```{r}
+df2 = tools_dt |>
+    tidyr::separate_rows("EDAM topic", sep = ",") |>
+    setDT()
+
+df2 = df2[which(
+    `Total tool usage (usegalaxy.eu)` != 0 & 
+        `No. of tool users (2022-2023) (usegalaxy.eu)` != 0
+)]
+
+df2$`EDAM topic` = df2$`EDAM topic` |> str_squish()
+
+df2$`EDAM topic` = ifelse(df2$`EDAM topic` == "", "No Topic", df2$`EDAM topic`)
+
+st = df2[, by = `EDAM topic`, .(N = `Galaxy wrapper id` |> unique() |> length())]
+st = st[order(-N)]
+st = st[seq_len(11)]
+
+df2$cluster = ifelse(
+    df2$`EDAM topic` %in% st$`EDAM topic`,
+    df2$`EDAM topic`, "Other Topics"
+)
+
+df2 = df2[, c(
+    "Galaxy wrapper id", 
+    "Total tool usage (usegalaxy.eu)", 
+    "No. of tool users (2022-2023) (usegalaxy.eu)", 
+    "cluster"
+)] |> unique()
+
+df2 = df2[, by = cluster, N := `Galaxy wrapper id` |> unique() |> length()]
+
+df2$cluster = df2$cluster |> 
+    factor(
+        levels = c(
+            st$`EDAM topic` |> str_subset("No Topic", negate = TRUE), 
+            "Other Topics", "No Topic"
+        )
+    )
+
+df2 = df2[order(cluster)]
+
+df2$strip = paste0("**", df2$cluster, "** (", df2$N, " tools)")
+df2$strip = df2$strip |> factor(levels = df2$strip |> unique())
+
+
+h0 = rbind(
+    df2[, by = strip, .SD[which.max(`Total tool usage (usegalaxy.eu)`)]],
+    df2[, by = strip, .SD[which.max(`No. of tool users (2022-2023) (usegalaxy.eu)`)]]
+) |>
+    unique()
+
+b <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
+    
+    geom_smooth(
+        data = df2[which(N >= 15)],
+        aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`),
+        method = "lm", se = FALSE, lineend = "round", linewidth = .75
+    ) +
+    
+    geom_point(shape = 21, size = 2, stroke = .2, color = "grey96", fill = "#2E2A2B") +
+    
+    geom_text_repel(
+        data = h0, inherit.aes = FALSE, 
+        mapping = aes(
+            `Total tool usage (usegalaxy.eu)`, 
+            `No. of tool users (2022-2023) (usegalaxy.eu)`, 
+            label = `Galaxy wrapper id`
+        ),
+        bg.color = "grey96", family = "Calibri", box.padding = .5,
+        segment.size = .3
+    ) +
+    
+    scale_x_continuous(
+        trans = "log10",  # expand = c(0, 0), limits = c(1, 10000000),
+        breaks = scales::trans_breaks("log10", function(x) 10^x),
+        labels = scales::trans_format("log10", scales::math_format(10^.x))
+    ) +
+    
+    scale_y_continuous(
+        trans = "log10", # limits = c(1, 10000),
+        labels = scales::comma, # expand = c(0, 0), 
+        breaks = c(.1, 1, 10, 100, 1000, 10000)
+    ) +
+    
+    guides(
+        alpha = guide_legend(
+            title = "Perc. of observations (tools)",
+            title.position = "top", 
+            title.theme = element_text(family = "Calibri")
+        )
+    ) +
+    
+    facet_wrap(vars(strip), nrow = 3, axes = "all") +
+    
+    coord_cartesian() +
+    
+    theme_minimal(base_family = "Calibri") +
+    
+    theme(
+        legend.position = "bottom",
+        legend.justification = "left",
+        
+        strip.text = element_markdown(),
+        
+        axis.title.x = element_markdown(margin = margin(t = 10)),
+        axis.title.y = element_markdown(margin = margin(r = 10)),
+        
+        axis.ticks = element_line(linewidth = .3),
+        
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(linewidth = .3, linetype = "dashed", color = "grey75"),
+        
+        panel.border = element_rect(linewidth = .3, fill = NA)
+    ) +
+    
+    labs(
+        x = "**Total tool usage** (usegalaxy.eu)",
+        y = "**No. of tool users 2022-2023** (usegalaxy.eu)"
+    )
+
+```
+
+## Saving graphs
+
+```{r}
+
+dir.create("../results/tools", showWarnings = FALSE)
+
+# 1 ---------------
+
+ggsave(
+    plot = a, filename = "../results/tools/edam-operations.png",
+    width = 12, height = 8, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = a, filename = "../results/tools/edam-operations.pdf",
+    width = 12, height = 8, units = "in", device = cairo_pdf
+)
+
+# 2 ---------------
+
+ggsave(
+    plot = b, filename = "../results/tools/edam-topics.png",
+    width = 12, height = 8, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = b, filename = "../results/tools/edam-topics.pdf",
+    width = 12, height = 8, units = "in", device = cairo_pdf
+)
+
+# 3 ---------------
+
+ggsave(
+    plot = c, filename = "../results/tools/availability.png",
+    width = 16, height = 4, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = c, filename = "../results/tools/availability.pdf",
+    width = 16, height = 4, units = "in", device = cairo_pdf
+)
+
+```
+
+
+
+
+
