@@ -1,0 +1,275 @@
+---
+title: "tutorials-graphs"
+author: "Nikos Pechlivanis"
+date: "2024-08-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Load `libraries`
+
+```{r message=FALSE}
+# install.packages("data.table")
+library(data.table)
+# install.packages("stringr")
+library(stringr)
+
+# install.packages(c("ggplot2", "ggrepel", "ggtext", "ggh4x"))
+library(ggplot2)
+library(ggrepel)
+library(ggtext)
+library(ggh4x)
+
+library(shadowtext)
+
+# install.packages("extrafont")
+library(extrafont)
+
+library(packcircles)
+```
+
+
+## Load input dataset
+
+```{r loaddata, include = FALSE}
+
+## THIS SECTION MIGHT THROUGH AN ERROR
+## THERE IS A BUG UNFORTUNATELY WITH fread FUNCTION
+## RUN ON CONSOLE IN THIS CASE
+
+tutorials_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/results/microgalaxy/tutorials.tsv"
+tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/results/microgalaxy/tools.tsv"
+
+tutorials_dt <- tutorials_url |> fread()
+tools_dt <- tools_url |> fread()
+```
+
+## Compute number of tools and number of microGalaxy tools per tutorial
+
+```{r}
+
+tutorials_dt$`Total No. of tools` = tutorials_dt$Tools |> 
+    str_split("\\,") |> 
+    lapply(str_squish) |> 
+    lapply(length) |> 
+    unlist()
+
+tutorials_dt$`No. of microGalaxy tools` = tutorials_dt$Tools |> 
+    str_split("\\,") |> 
+    lapply(str_squish) |> 
+    lapply(function(q) which(q %in% tools_dt$`Galaxy tool ids`) |> length() ) |> 
+    unlist()
+
+tutorials_dt$`No. of other tools` = tutorials_dt$`Total No. of tools` - tutorials_dt$`No. of microGalaxy tools`
+
+```
+
+### Exclude unnecessary columns
+
+```{r}
+tutorials_dt$Topic = NULL
+
+tutorials_dt$Link = NULL
+
+tutorials_dt$`Servers with precise tool versions` = NULL
+tutorials_dt$`Servers with tool but different versions` = NULL
+```
+
+## Tools coverage graph: Bar plot
+
+```{r}
+df <- tutorials_dt[, c(
+    "Title", 
+    "No. of microGalaxy tools",
+    "No. of other tools"
+), with = FALSE]
+
+colnames(df) = c("Title", "microGalaxy related", "Other")
+
+df <- df |> melt(id.vars = "Title", variable.factor = FALSE, value.factor = FALSE)
+
+df[, by = Title, N := sum(value)]
+
+
+df <- df[order(N, value)]
+
+df$Title <- df$Title |> factor(levels = df$Title |> unique())
+
+a <- df |>
+    ggplot(aes(value, Title)) +
+    geom_col(aes(fill = variable)) +
+    
+    scale_x_continuous(expand = c(0, 0), limits = c(0, 65),
+                       sec.axis = dup_axis(name = NULL)) +
+    
+    scale_fill_manual(values = c("Other" = "#6A6599", "microGalaxy related" = "#B24745")) +
+    
+    theme_minimal(base_family = "Calibri") +
+    theme(
+        legend.position = c(.80, .5),
+        legend.title = element_blank(),
+        
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        
+        panel.grid.major.x = element_line(linewidth = .45, color = "grey85", linetype = "dashed", lineend = "round"),
+        panel.grid.minor.x = element_line(linewidth = .45, color = "grey85", linetype = "dotted", lineend = "round"),
+        
+        axis.line.y = element_line(linewidth = .45, color = "grey75"),
+        axis.ticks.y = element_line(linewidth = .45, color = "grey75"),
+        
+        axis.text.y = element_text(face = "bold")
+    ) +
+    
+    labs(x = "No. of tools", y = "Tutorial title")
+
+```
+
+## EDAM ontology distribution: packcircles
+
+```{r}
+
+# ----------------------
+d1 <- tutorials_dt[, c("Title", "EDAM topic"), with = FALSE] |>
+    tidyr::separate_rows("EDAM topic", sep = ",") |>
+    setDT()
+
+d2 <- tutorials_dt[, c("Title", "EDAM operation"), with = FALSE] |>
+    tidyr::separate_rows("EDAM operation", sep = ",") |>
+    setDT()
+
+# ---------------------
+
+d1$`EDAM topic` = d1$`EDAM topic` |> str_squish()
+d1$`EDAM topic` = ifelse(d1$`EDAM topic` == "", "No Topic", d1$`EDAM topic`)
+    
+d2$`EDAM operation` = d2$`EDAM operation` |> str_squish()
+d2$`EDAM operation` = ifelse(d2$`EDAM operation` == "", "No Operation", d2$`EDAM operation`)
+
+d1 = d1[, by = `EDAM topic`, .(N = Title |> unique() |> length())]
+d2 = d2[, by = `EDAM operation`, .(N = Title |> unique() |> length())]
+
+# ------------------------------
+
+# Generate the layout. 
+# sizetype can be area or radius, 
+# following your preference on what to be proportional to value.
+
+packing_d1 <- circleProgressiveLayout(d1$N, sizetype = 'area') |> circleLayoutVertices(npoints = 100) |> setDT()
+packing_d2 <- circleProgressiveLayout(d2$N, sizetype = 'area') |> circleLayoutVertices(npoints = 100) |> setDT()
+
+packing_d1$strip <- d1[packing_d1$id]$`EDAM topic`
+packing_d2$strip <- d2[packing_d2$id]$`EDAM operation`
+
+packing_d1$`No. of Tutorials` <- d1[packing_d1$id]$N
+packing_d2$`No. of Tutorials` <- d2[packing_d2$id]$N
+
+packing_d1$pack <- "EDAM topic"
+packing_d2$pack <- "EDAM operation"
+
+d <- rbind(packing_d1, packing_d2)
+
+h <- d[which(`No. of Tutorials` > 2), by = .(pack, strip, `No. of Tutorials`), .(
+    x = (max(x) + min(x)) / 2,
+    y = (max(y) + min(y)) / 2
+)]
+
+h$strip <- h$strip |> str_wrap(width = 8)
+
+b <- d |>
+    ggplot(aes(x, y, group = id)) + 
+    geom_polygon(aes(fill = `No. of Tutorials`), color = "grey20", linewidth = .25) +
+    
+    geom_shadowtext(
+        data = h, aes(x, y, label = strip, size = `No. of Tutorials`),
+        inherit.aes = FALSE, bg.color = "grey96", color = "grey20", bg.r = .065,
+        family = "Calibri"
+    ) +
+    
+    scale_fill_stepsn(
+        colors = c("#00429d", "#3761ab", "#5681b9", "#73a2c6", "#93c4d2", "#b9e5dd", "#ffffe0") |> rev(),
+        guide = guide_colorsteps(
+            barwidth = unit(10, "lines"),
+            barheight = unit(.5, "lines")
+        )
+    ) +
+    
+    scale_size_continuous(range = c(1.5, 5), guide = "none") +
+    
+    facet_wrap(vars(pack), nrow = 1) +
+    theme_void(base_family = "Calibri") + 
+    theme(
+        legend.position = "bottom",
+        legend.title.position = "top",
+        
+        strip.text = element_text(face = "bold")
+    ) +
+    coord_equal()
+
+```
+
+## Saving graphs
+
+```{r}
+
+dir.create("../results/tutorials", showWarnings = FALSE)
+
+# 1 ---------------
+
+ggsave(
+    plot = a, filename = "../results/tutorials/tools-coverage.png",
+    width = 7, height = 8, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = a, filename = "../results/tutorials/tools-coverage.pdf",
+    width = 7, height = 8, units = "in", device = cairo_pdf
+)
+
+# 2 ---------------
+
+ggsave(
+    plot = b, filename = "../results/tutorials/edam.png",
+    width = 10, height = 8, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = b, filename = "../results/tutorials/edam.pdf",
+    width = 10, height = 8, units = "in", device = cairo_pdf
+)
+
+```
+
+
+
+
+
+
+
+
+
+
+

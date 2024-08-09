@@ -29,23 +29,32 @@ plot(pressure)
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
-## `libraries`
+## Load `libraries`
 
 ```{r message=FALSE}
+# install.packages("data.table")
 library(data.table)
+# install.packages("stringr")
 library(stringr)
 
+# install.packages(c("ggplot2", "ggrepel", "ggtext", "ggh4x"))
 library(ggplot2)
 library(ggrepel)
 library(ggtext)
 library(ggh4x)
 
+# install.packages("extrafont")
 library(extrafont)
 ```
 
-## Input dataset
+## Load input dataset
 
-```{r message=FALSE}
+```{r loaddata, include = FALSE}
+
+## THIS SECTION MIGHT THROUGH AN ERROR
+## THERE IS A BUG UNFORTUNATELY WITH fread FUNCTION
+## RUN ON CONSOLE IN THIS CASE
+
 tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/results/microgalaxy/tools.tsv"
 
 tools_dt <- tools_url |> fread()
@@ -61,7 +70,7 @@ tools_dt$`bio.tool id`          = NULL
 tools_dt$`bio.tool name`        = NULL
 tools_dt$`bio.tool description` = NULL
 
-tools_dt$Source            = NULL
+tools_dt$Source = NULL
 
 tools_dt$`Conda id`      = NULL
 tools_dt$`Conda version` = NULL
@@ -72,7 +81,7 @@ tools_dt$`Galaxy wrapper version` = NULL
 tools_dt$`Galaxy wrapper parsed folder` = NULL
 ```
 
-## Tool Availability
+## Tool Availability graph: Heatmap
 
 ```{r}
 # extract only availability information --------------------
@@ -125,35 +134,38 @@ c <- d[which(value >= 2)] |>
     labs(x = "Galaxy wrapper ID", y = "Tools available on",
          fill = "No. of Tools")
 
-
-
 ```
 
-## EDAM Operation
+## EDAM Operation graph: Faceted scatter plot
 
 ```{r}
+# split EDAM operations per tool ------------------------
 df2 = tools_dt |>
     tidyr::separate_rows("EDAM operation", sep = ",") |>
     setDT()
 
+# remove empty tools ------------------------------
 df2 = df2[which(
     `Total tool usage (usegalaxy.eu)` != 0 & 
         `No. of tool users (2022-2023) (usegalaxy.eu)` != 0
 )]
 
+# clean `EDAM operation` column -----------------
 df2$`EDAM operation` = df2$`EDAM operation` |> str_squish()
-
 df2$`EDAM operation` = ifelse(df2$`EDAM operation` == "", "No Operation", df2$`EDAM operation`)
 
+# find most top #11 EDAM operations ------------------
 st = df2[, by = `EDAM operation`, .(N = `Galaxy wrapper id` |> unique() |> length())]
 st = st[order(-N)]
 st = st[seq_len(11)]
 
+# define every other operation as Other Operations --------------
 df2$cluster = ifelse(
     df2$`EDAM operation` %in% st$`EDAM operation`,
     df2$`EDAM operation`, "Other Operations"
 )
 
+# keep only necessary columns ----------------------
 df2 = df2[, c(
     "Galaxy wrapper id", 
     "Total tool usage (usegalaxy.eu)", 
@@ -161,10 +173,10 @@ df2 = df2[, c(
     "cluster"
 )] |> unique()
 
-
-
+# number of tools per operation -------------------------
 df2[, by = cluster, N := `Galaxy wrapper id` |> unique() |> length()]
 
+# define factor levels of cluster column -------------------
 df2$cluster = df2$cluster |> 
     factor(
         levels = c(
@@ -175,15 +187,17 @@ df2$cluster = df2$cluster |>
 
 df2 = df2[order(cluster)]
 
+# define strip for plotting  ----------------------
 df2$strip = paste0("**", df2$cluster, "** (", df2$N, " tools)")
 df2$strip = df2$strip |> factor(levels = df2$strip |> unique())
 
+# gather highlighting Galaxy wrapper tools for plotting --------------
 h0 = rbind(
     df2[, by = strip, .SD[which.max(`Total tool usage (usegalaxy.eu)`)]],
     df2[, by = strip, .SD[which.max(`No. of tool users (2022-2023) (usegalaxy.eu)`)]]
 ) |> unique()
 
-
+# create graph ----------------------------------------------
 a <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
     
     geom_smooth(
@@ -252,28 +266,33 @@ a <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022
 ## EDAM topic
 
 ```{r}
+# split EADM topics per tool ------------------------
 df2 = tools_dt |>
     tidyr::separate_rows("EDAM topic", sep = ",") |>
     setDT()
 
+# remove empty tools ------------------
 df2 = df2[which(
     `Total tool usage (usegalaxy.eu)` != 0 & 
         `No. of tool users (2022-2023) (usegalaxy.eu)` != 0
 )]
 
+# clean `EDAM topic` column -------------
 df2$`EDAM topic` = df2$`EDAM topic` |> str_squish()
-
 df2$`EDAM topic` = ifelse(df2$`EDAM topic` == "", "No Topic", df2$`EDAM topic`)
 
+# find most top #11 EDAM topics ------------------
 st = df2[, by = `EDAM topic`, .(N = `Galaxy wrapper id` |> unique() |> length())]
 st = st[order(-N)]
 st = st[seq_len(11)]
 
+# define every other operation as Other Operations ------------
 df2$cluster = ifelse(
     df2$`EDAM topic` %in% st$`EDAM topic`,
     df2$`EDAM topic`, "Other Topics"
 )
 
+# keep only necessary columns -------------------
 df2 = df2[, c(
     "Galaxy wrapper id", 
     "Total tool usage (usegalaxy.eu)", 
@@ -281,8 +300,10 @@ df2 = df2[, c(
     "cluster"
 )] |> unique()
 
+# number of tools per operation ------------------------
 df2 = df2[, by = cluster, N := `Galaxy wrapper id` |> unique() |> length()]
 
+# define factor levels of cluster column ----------------------
 df2$cluster = df2$cluster |> 
     factor(
         levels = c(
@@ -293,16 +314,17 @@ df2$cluster = df2$cluster |>
 
 df2 = df2[order(cluster)]
 
+# define strip for plotting -------------------------------
 df2$strip = paste0("**", df2$cluster, "** (", df2$N, " tools)")
 df2$strip = df2$strip |> factor(levels = df2$strip |> unique())
 
-
+# gather highlighting Galaxy wrapper tools for plotting ---------------
 h0 = rbind(
     df2[, by = strip, .SD[which.max(`Total tool usage (usegalaxy.eu)`)]],
     df2[, by = strip, .SD[which.max(`No. of tool users (2022-2023) (usegalaxy.eu)`)]]
-) |>
-    unique()
+) |> unique()
 
+# create graph ----------------------------
 b <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
     
     geom_smooth(
