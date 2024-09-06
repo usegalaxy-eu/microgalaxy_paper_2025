@@ -108,9 +108,18 @@ d = availability |> melt(id.vars = "Galaxywrapperid", variable.factor = FALSE, v
 d$Galaxywrapperid = d$Galaxywrapperid |> factor(levels = mm_c$labels[mm_c$order |> rev()])
 d$variable = d$variable |> factor(levels = mm_r$labels[mm_r$order |> rev()])
 
+d$fct <- ifelse(
+    d$variable |> str_detect("UseGalaxy"),
+    "UseGalaxy", "v"
+)
+
+index = d[which(fct == "UseGalaxy")][[1]] |> unique()
+
+p <- d[which(Galaxywrapperid %in% index)]
+
 # plot ---------------------
 
-c <- d[which(value >= 2)] |> 
+c <- p[which(value >= 1)] |> 
     
     ggplot(aes(Galaxywrapperid, variable)) + 
     
@@ -121,17 +130,25 @@ c <- d[which(value >= 2)] |>
         guide = guide_colorsteps(barwidth = unit(.5, "lines"), barheight = unit(8, "lines"))
     ) +
     
+    facet_grid(rows = vars(fct), scales = "free_y", space = "free_y") +
+    
+    scale_y_discrete(expand = c(0, 0)) +
+    
     theme_minimal(base_family = "Calibri") +
     
     theme(
         legend.position = "right",
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+        
+        panel.border = element_rect(fill = NA, color = "grey10"),
+        
+        strip.text = element_blank(),
         
         panel.grid.minor = element_blank(),
         panel.grid.major = element_line(linetype = "dashed", lineend = "round")
     ) +
     
-    labs(x = "Galaxy wrapper ID", y = "Tools available on",
+    labs(x = "Galaxy Tool Suits", y = "Tools available on",
          fill = "No. of Tools")
 
 ```
@@ -200,11 +217,11 @@ h0 = rbind(
 # create graph ----------------------------------------------
 a <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
     
-    geom_smooth(
-        data = df2[which(N >= 15)], 
-                aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`),
-                method = "lm", se = FALSE, lineend = "round", linewidth = .75
-    ) +
+    # geom_smooth(
+    #     data = df2[which(N >= 15)], 
+    #             aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`),
+    #             method = "lm", se = FALSE, lineend = "round", linewidth = .75
+    # ) +
     
     geom_point(shape = 21, size = 2, stroke = .2, color = "grey96", fill = "#2E2A2B") +
     
@@ -261,6 +278,63 @@ a <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022
         x = "**Total tool usage** (usegalaxy.eu)",
         y = "**No. of tool users 2022-2023** (usegalaxy.eu)"
     )
+
+a1 <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
+    
+    geom_point(shape = 21, size = 2, stroke = .2, color = "grey96", aes(fill = cluster)) +
+    
+    geom_text_repel(
+        data = h0, inherit.aes = FALSE, 
+        mapping = aes(
+            `Total tool usage (usegalaxy.eu)`, 
+            `No. of tool users (2022-2023) (usegalaxy.eu)`, 
+            label = `Galaxy wrapper id`
+        ),
+        bg.color = "grey96", family = "Calibri", box.padding = .5,
+        segment.size = .3
+    ) +
+    
+    scale_x_continuous(
+        trans = "log10",  # expand = c(0, 0), 
+        limits = c(1, 10000000), 
+        breaks = scales::trans_breaks("log10", function(x) 10^x),
+        labels = scales::trans_format("log10", scales::math_format(10^.x))
+    ) +
+    
+    scale_y_continuous(
+        trans = "log10", # limits = c(1, 10000),
+        labels = scales::comma, # expand = c(0, 0), 
+        breaks = c(.1, 1, 10, 100, 1000, 10000)
+    ) +
+    
+    coord_cartesian() +
+    
+    theme_minimal(base_family = "Calibri") +
+    
+    theme(
+        legend.position = "bottom",
+        legend.justification = "left",
+        
+        strip.text = element_markdown(),
+        
+        axis.title.x = element_markdown(margin = margin(t = 10)),
+        axis.title.y = element_markdown(margin = margin(r = 10)),
+        
+        axis.ticks = element_line(linewidth = .3),
+        
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(linewidth = .3, linetype = "dashed", color = "grey75"),
+        
+        panel.border = element_rect(linewidth = .3, fill = NA),
+        
+        plot.margin = margin(20, 20, 20, 20)
+    ) +
+    
+    labs(
+        x = "**Total tool usage** (usegalaxy.eu)",
+        y = "**No. of tool users 2022-2023** (usegalaxy.eu)"
+    )
+
 ```
 
 ## EDAM topic
