@@ -279,19 +279,37 @@ a <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022
         y = "**No. of tool users 2022-2023** (usegalaxy.eu)"
     )
 
-a1 <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
+df3 <- df2[, by = .(`Galaxy wrapper id`, `Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`), .(
+    clusters = cluster |> sort() |> paste(collapse = ", "),
+    Nclusters = cluster |> length()
+)]
+
+df3$clusters <- ifelse(
+    df3$clusters == "Other Operations" | df3$clusters == "Other Operations, No Operation",
+    "Other Operations", df3$clusters
+)
+
+h1 <- h0[, c("Galaxy wrapper id", "Total tool usage (usegalaxy.eu)", "No. of tool users (2022-2023) (usegalaxy.eu)")] |>
+    unique()
+
+a1 <- ggplot(df3, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
     
-    geom_point(shape = 21, size = 2, stroke = .2, color = "grey96", aes(fill = cluster)) +
+    geom_point(shape = 21, size = 2, stroke = .2, color = "grey25", aes(fill = clusters)) +
     
     geom_text_repel(
-        data = h0, inherit.aes = FALSE, 
+        data = h1, inherit.aes = FALSE,
         mapping = aes(
-            `Total tool usage (usegalaxy.eu)`, 
-            `No. of tool users (2022-2023) (usegalaxy.eu)`, 
+            `Total tool usage (usegalaxy.eu)`,
+            `No. of tool users (2022-2023) (usegalaxy.eu)`,
             label = `Galaxy wrapper id`
         ),
         bg.color = "grey96", family = "Calibri", box.padding = .5,
-        segment.size = .3
+        segment.size = .3, max.overlaps = Inf
+    ) +
+
+    scale_fill_manual(
+        values = paletteer_d("ggsci::default_igv"),
+        guide = guide_legend(ncol = 4)
     ) +
     
     scale_x_continuous(
@@ -314,6 +332,7 @@ a1 <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (202
     theme(
         legend.position = "bottom",
         legend.justification = "left",
+        legend.title = element_blank(),
         
         strip.text = element_markdown(),
         
@@ -486,6 +505,17 @@ ggsave(
 ggsave(
     plot = a, filename = "../results/tools/edam-operations.pdf",
     width = 12, height = 8, units = "in", device = cairo_pdf
+)
+
+
+ggsave(
+    plot = a1, filename = "../results/tools/edam-operations-1.png",
+    width = 12, height = 10, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = a1, filename = "../results/tools/edam-operations-1.pdf",
+    width = 12, height = 10, units = "in", device = cairo_pdf
 )
 
 # 2 ---------------

@@ -51,7 +51,6 @@ library(extrafont)
 library(packcircles)
 ```
 
-
 ## Load input dataset
 
 ```{r loaddata, include = FALSE}
@@ -147,6 +146,65 @@ a <- df |>
     labs(x = "No. of tools", y = "Tutorial title")
 
 ```
+
+## Tools coverage graph: Heatmap
+
+```{r}
+df <- tutorials_dt[, c(
+    "Title", 
+    "EDAM operation"
+), with = FALSE]
+
+colnames(df) = c("Title", "Tools")
+
+df2 = df$Tools |> 
+    str_split("\\,") |> 
+    lapply(function(x) data.table("tool_id" = x |> str_squish())) |>
+    rbindlist(idcol = "tutorial_id")
+
+df2$tutorial_id = df[df2$tutorial_id]$Title
+
+df2 <- df2[which(!(tool_id %in% c(
+    "", 
+    "__BUILD_LIST__", 
+    "__EXTRACT_DATASET__",
+    "__FILTER_EMPTY_DATASETS__",
+    "__FILTER_FAILED_DATASETS__",
+    "__FLATTEN__", 
+    "__MERGE_COLLECTION__", 
+    "__SORTLIST__",
+    "__UNZIP_COLLECTION__",
+    "__UNZIP_COLLECTION__" 
+)))] |> unique()
+
+
+df2 <- df2 |> unique()
+df2$value <- 1
+
+
+m <- df2 |> dcast(tutorial_id ~ tool_id, value.var = "value", fill = 0)
+m <- m[, -1] |> setDF(rownames = m$tutorial_id) |> as.matrix()
+
+
+mm_c <- t(m) |> dist(method = "euclidean") |> hclust(method = "ward.D2")
+mm_r <- m |> dist(method = "euclidean") |> hclust(method = "ward.D2")
+
+df2$tutorial_id <- df2$tutorial_id |> factor(levels = mm_r$labels[mm_r$order |> rev()])
+df2$tool_id <- df2$tool_id |> factor(levels = mm_c$labels[mm_c$order |> rev()])
+
+a1 <- df2 |>
+    ggplot(aes(tool_id, tutorial_id)) +
+    geom_tile(color = "grey96") +
+    
+    theme_minimal() +
+    
+    theme(
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 6)
+    )
+    
+
+```
+
 
 ## EDAM ontology distribution: packcircles
 
@@ -262,14 +320,3 @@ ggsave(
 )
 
 ```
-
-
-
-
-
-
-
-
-
-
-
