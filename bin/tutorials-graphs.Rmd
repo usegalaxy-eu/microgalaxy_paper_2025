@@ -9,26 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
 ## Load `libraries`
 
 ```{r message=FALSE}
@@ -51,7 +31,6 @@ library(extrafont)
 library(packcircles)
 ```
 
-
 ## Load input dataset
 
 ```{r loaddata, include = FALSE}
@@ -71,16 +50,45 @@ tools_dt <- tools_url |> fread()
 
 ```{r}
 
-tutorials_dt$`Total No. of tools` = tutorials_dt$Tools |> 
-    str_split("\\,") |> 
-    lapply(str_squish) |> 
-    lapply(length) |> 
+# 1 ------------------------
+
+dt1 <- tutorials_dt$Tools |> 
+    str_split("\\,") |>
+    lapply(str_squish) |>
+    lapply(function(q) data.table("Galaxy tool id" = q)) |>
+    rbindlist(idcol = "Topic_id")
+
+dt1$Topic = tutorials_dt[dt1$Topic_id]$Topic
+dt1$Title = tutorials_dt[dt1$Topic_id]$Title
+
+# 2 ------------------------------------
+
+tmp <- tools_dt[, c("Galaxy wrapper id", "Galaxy tool ids"), with = FALSE] |> unique()
+tmp <- tmp[which(`Galaxy tool ids` != "")]
+
+tmp <- tmp |>
+    tidyr::separate_rows("Galaxy tool ids", sep = ",") |>
+    setDT()
+
+
+# 3 ------------------
+
+index = match(dt1$`Galaxy tool id`, tmp$`Galaxy tool ids`)
+
+dt1$`Galaxy wrapper id (microGalaxy)` = tmp[index][[1]]
+
+# 4 ----------------------------
+
+tutorials_dt$`Total No. of tools` = tutorials_dt$Tools |>
+    str_split("\\,") |>
+    lapply(str_squish) |>
+    lapply(length) |>
     unlist()
 
-tutorials_dt$`No. of microGalaxy tools` = tutorials_dt$Tools |> 
-    str_split("\\,") |> 
-    lapply(str_squish) |> 
-    lapply(function(q) which(q %in% tools_dt$`Galaxy tool ids`) |> length() ) |> 
+tutorials_dt$`No. of microGalaxy tools` = tutorials_dt$Tools |>
+    str_split("\\,") |>
+    lapply(str_squish) |>
+    lapply(function(q) which(q %in% tmp$`Galaxy tool ids`) |> length() ) |>
     unlist()
 
 tutorials_dt$`No. of other tools` = tutorials_dt$`Total No. of tools` - tutorials_dt$`No. of microGalaxy tools`
@@ -147,6 +155,63 @@ a <- df |>
     labs(x = "No. of tools", y = "Tutorial title")
 
 ```
+
+## Tools coverage graph: Heatmap
+
+```{r}
+# df <- tutorials_dt[, c(
+#     "Title", 
+#     "EDAM operation"
+# ), with = FALSE]
+# 
+# colnames(df) = c("Title", "Tools")
+# 
+# df2 = df$Tools |> 
+#     str_split("\\,") |> 
+#     lapply(function(x) data.table("tool_id" = x |> str_squish())) |>
+#     rbindlist(idcol = "tutorial_id")
+# 
+# df2$tutorial_id = df[df2$tutorial_id]$Title
+# 
+# df2 <- df2[which(!(tool_id %in% c(
+#     "", 
+#     "__BUILD_LIST__", 
+#     "__EXTRACT_DATASET__",
+#     "__FILTER_EMPTY_DATASETS__",
+#     "__FILTER_FAILED_DATASETS__",
+#     "__FLATTEN__", 
+#     "__MERGE_COLLECTION__", 
+#     "__SORTLIST__",
+#     "__UNZIP_COLLECTION__",
+#     "__UNZIP_COLLECTION__" 
+# )))] |> unique()
+# 
+# 
+# df2 <- df2 |> unique()
+# df2$value <- 1
+# 
+# 
+# m <- df2 |> dcast(tutorial_id ~ tool_id, value.var = "value", fill = 0)
+# m <- m[, -1] |> setDF(rownames = m$tutorial_id) |> as.matrix()
+# 
+# 
+# mm_c <- t(m) |> dist(method = "euclidean") |> hclust(method = "ward.D2")
+# mm_r <- m |> dist(method = "euclidean") |> hclust(method = "ward.D2")
+# 
+# df2$tutorial_id <- df2$tutorial_id |> factor(levels = mm_r$labels[mm_r$order |> rev()])
+# df2$tool_id <- df2$tool_id |> factor(levels = mm_c$labels[mm_c$order |> rev()])
+# 
+# a1 <- df2 |>
+#     ggplot(aes(tool_id, tutorial_id)) +
+#     geom_tile(color = "grey96") +
+#     
+#     theme_minimal() +
+#     
+#     theme(
+#         axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 6)
+#     )
+```
+
 
 ## EDAM ontology distribution: packcircles
 
@@ -237,6 +302,10 @@ b <- d |>
 
 dir.create("../results/tutorials", showWarnings = FALSE)
 
+# dt --------------------------
+
+writexl::write_xlsx(dt1, "../results/tutorials/microGalaxy-tools.xlsx")
+
 # 1 ---------------
 
 ggsave(
@@ -262,14 +331,3 @@ ggsave(
 )
 
 ```
-
-
-
-
-
-
-
-
-
-
-
