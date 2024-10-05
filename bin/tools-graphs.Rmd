@@ -25,6 +25,8 @@ library(ggh4x)
 
 # install.packages("extrafont")
 library(extrafont)
+
+library(colorspace)
 ```
 
 ## Load input dataset
@@ -35,7 +37,7 @@ library(extrafont)
 ## THERE IS A BUG UNFORTUNATELY WITH fread FUNCTION
 ## RUN ON CONSOLE IN THIS CASE
 
-tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/results/microgalaxy/tools.tsv"
+tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/tools.tsv"
 
 tools_dt <- tools_url |> fread()
 ```
@@ -66,16 +68,30 @@ tools_dt$`Galaxy wrapper parsed folder` = NULL
 ```{r}
 # extract only availability information --------------------
 
-index <- tools_dt |> colnames() |> str_subset("Tools available on")
+index <- tools_dt |> 
+    colnames() |> 
+    str_subset("Tools available on")
 
-availability <- tools_dt[, c("Galaxy wrapper id", index), with = FALSE] |> unique()
+availability <- tools_dt[, c(
+    "Galaxy wrapper id", "EDAM operation (no superclasses)", 
+    index
+), with = FALSE] |> unique()
 
-colnames(availability) <- availability |> colnames() |> str_remove_all("Tools|available|on") |> str_squish()
+colnames(availability) <- availability |> 
+    colnames() |> 
+    str_remove_all("Tools\\ available\\ on") |> 
+    str_squish()
+
+# clean out ---------------------
+
+index <- which(availability$`Galaxy wrapper id` == "srst2" & availability$`EDAM operation (no superclasses)` == "")
+
+availability <- availability[-index]
 
 # Hierarchical clustering ---------------------
 
-mm <- availability[, -1] |> 
-    setDF(rownames = availability$Galaxywrapperid) |> 
+mm <- availability[, -c(1, 2)] |> 
+    setDF(rownames = availability$`Galaxy wrapper id`) |> 
     as.matrix()
 
 mm_c <- mm |> dist(method = "manhattan") |> hclust(method = "ward.D2")
@@ -83,10 +99,15 @@ mm_r <- t(mm) |> dist(method = "manhattan") |> hclust(method = "ward.D2")
 
 # plotting data -----------------------
 
-d = availability |> melt(id.vars = "Galaxy wrapper id", variable.factor = FALSE, value.factor = FALSE)
-d = d[which(value >= 1)]
+d <- availability |> 
+    melt(
+        id.vars = c("Galaxy wrapper id", "EDAM operation (no superclasses)"), 
+        variable.factor = FALSE, value.factor = FALSE
+    )
 
-d$Galaxywrapperid = d$Galaxywrapperid |> factor(levels = mm_c$labels[mm_c$order |> rev()])
+d <- d[which(value >= 1)]
+
+d$`Galaxy wrapper id` = d$`Galaxy wrapper id` |> factor(levels = mm_c$labels[mm_c$order |> rev()])
 d$variable = d$variable |> factor(levels = mm_r$labels[mm_r$order |> rev()])
 
 d$fct <- ifelse(
@@ -98,39 +119,118 @@ index = d[which(fct == "UseGalaxy")][[1]] |> unique()
 
 p <- d[which(`Galaxy wrapper id` %in% index)]
 
-# plot ---------------------
+# t <- p$`EDAM operation (no superclasses)` |>
+#     str_split("\\,") |> unlist() |>
+#     str_squish() |>
+#     table() |> sort(decreasing = TRUE) |>
+#     as.data.table()
+# 
+# t <- t[which(V1 != ""), head(.SD, 10)]
 
-c <- p |> 
+
+p2 <- p |>
+    tidyr::separate_rows("EDAM operation (no superclasses)", sep = ",") |>
+    setDT()
+
+p2$`EDAM operation (no superclasses)` <- p2$`EDAM operation (no superclasses)` |> str_squish()
+
+p2$`EDAM operation (no superclasses)` <- p2$`EDAM operation (no superclasses)` |> str_wrap(width = 10)
+
+t <- p2[, by = "EDAM operation (no superclasses)", .(N = `Galaxy wrapper id` |> unique() |> length())]
+t <- t[order(-N)]
+t <- t[which(`EDAM operation (no superclasses)` != ""), head(.SD, 10)]
+
+p2$edam_clean <- ifelse(
+    p2$`EDAM operation (no superclasses)` %in% t$`EDAM operation (no superclasses)`, 
+    p2$`EDAM operation (no superclasses)`,
+    "Other"
+)
+
+p2$edam_clean <- p2$edam_clean |> factor(levels = c(t$`EDAM operation (no superclasses)`, "Other"))
+
+# plot-1 ---------------------
+
+c_1 <- p2[which(edam_clean != "Other")] |> 
     
     ggplot(aes(`Galaxy wrapper id`, variable)) + 
     
-    geom_tile(aes(fill = value), color = "grey96") + 
+    geom_tile(aes(fill = value), color = "grey") + 
     
     scale_fill_stepsn(
-        colors = c('#00429d', '#5681b9', '#93c4d2', '#ffa59e', '#dd4c65', '#93003a'),
-        guide = guide_colorsteps(barwidth = unit(.5, "lines"), barheight = unit(8, "lines"))
+        colors = c('#00429d', '#5681b9', '#93c4d2', '#ffffe0', '#ffa59e', '#dd4c65', '#93003a'),
+        guide = guide_colorsteps(barwidth = unit(12, "lines"), barheight = unit(.5, "lines")),
+        breaks = c(2, 4, 8, 16, 32, 64, 128),
+        transform = "log2"
     ) +
     
-    facet_grid(rows = vars(fct), scales = "free_y", space = "free_y") +
+    facet_grid(rows = vars(fct), cols = vars(edam_clean), scales = "free", space = "free") +
     
     scale_y_discrete(expand = c(0, 0)) +
     
     theme_minimal(base_family = "Calibri") +
     
     theme(
-        legend.position = "right",
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 3),
+        legend.position = "bottom",
+        legend.title.position = "top",
+        
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+        
+        axis.title.y = element_markdown(),
         
         panel.border = element_rect(fill = NA, color = "grey10"),
         
-        strip.text = element_blank(),
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(face = "bold"),
         
         panel.grid.minor = element_blank(),
-        panel.grid.major = element_line(linetype = "dashed", lineend = "round")
+        panel.grid.major = element_line(linetype = "dashed", lineend = "round", linewidth = .35),
+        
+        plot.margin = margin(10, 10, 10, 10)
     ) +
     
-    labs(x = "Galaxy Tool Suits", y = "Tools available on",
-         fill = "No. of Tools")
+    labs(x = "Galaxy Tool Suites", y = "Availability of Tool Suites Across **Servers**", fill = "No. of Tools")
+
+# plot-2 ---------------------
+
+c_2 <- p |> 
+    
+    ggplot(aes(`Galaxy wrapper id`, variable)) + 
+    
+    geom_tile(aes(fill = value), color = "grey") + 
+    
+    scale_fill_stepsn(
+        colors = c('#00429d', '#5681b9', '#93c4d2', '#ffffe0', '#ffa59e', '#dd4c65', '#93003a'),
+        guide = guide_colorsteps(barwidth = unit(12, "lines"), barheight = unit(.5, "lines")),
+        breaks = c(2, 4, 8, 16, 32, 64, 128),
+        transform = "log2"
+    ) +
+    
+    facet_grid(rows = vars(fct), scales = "free", space = "free") +
+    
+    scale_y_discrete(expand = c(0, 0)) +
+    
+    theme_minimal(base_family = "Calibri") +
+    
+    theme(
+        legend.position = "bottom",
+        legend.title.position = "top",
+        
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 3),
+        
+        axis.title.y = element_markdown(),
+        
+        panel.border = element_rect(fill = NA, color = "grey10"),
+        
+        strip.text.y = element_blank(),
+        strip.text.x = element_text(face = "bold", angle = 90, hjust = 0),
+        
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(linetype = "dashed", lineend = "round", linewidth = .35),
+        
+        plot.margin = margin(10, 10, 10, 10)
+    ) +
+    
+    labs(x = "Galaxy Tool Suites", y = "Availability of Tool Suites Across **Servers**", fill = "No. of Tools")
 
 ```
 
@@ -206,7 +306,8 @@ h0 <- df2[, by = strip, head(.SD, 10)]
 # create graph ----------------------------------------------
 a <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
     
-    geom_point(shape = 21, size = 2, stroke = .2, color = "grey96", fill = "#2E2A2B") +
+    geom_point(shape = 21, size = 2, stroke = .25, 
+               color = "#2E2A2B" |> darken(.5), fill = "#2E2A2B" |> lighten(.5)) +
     
     geom_text_repel(
         data = h0, inherit.aes = FALSE,
@@ -411,7 +512,8 @@ h0 <- df2[, by = strip, head(.SD, 10)]
 # create graph ----------------------------
 b <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
     
-    geom_point(shape = 21, size = 2, stroke = .2, color = "grey96", fill = "#2E2A2B") +
+    geom_point(shape = 21, size = 2, stroke = .25, 
+               color = "#2E2A2B" |> darken(.5), fill = "#2E2A2B" |> lighten(.5)) +
     
     geom_text_repel(
         data = h0, inherit.aes = FALSE, 
@@ -484,12 +586,17 @@ dir.create("../results/tools", showWarnings = FALSE)
 
 ggsave(
     plot = a, filename = "../results/tools/edam-operations.png",
-    width = 12, height = 8, units = "in", dpi = 600
+    width = 12, height = 9, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = a, filename = "../results/tools/edam-operations.svg",
+    width = 12, height = 9, units = "in"
 )
 
 ggsave(
     plot = a, filename = "../results/tools/edam-operations.pdf",
-    width = 12, height = 8, units = "in", device = cairo_pdf
+    width = 12, height = 9, units = "in", device = cairo_pdf
 )
 
 
@@ -507,24 +614,49 @@ ggsave(
 
 ggsave(
     plot = b, filename = "../results/tools/edam-topics.png",
-    width = 12, height = 8, units = "in", dpi = 600
+    width = 12, height = 9, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = b, filename = "../results/tools/edam-topics.svg",
+    width = 12, height = 9, units = "in"
 )
 
 ggsave(
     plot = b, filename = "../results/tools/edam-topics.pdf",
-    width = 12, height = 8, units = "in", device = cairo_pdf
+    width = 12, height = 9, units = "in", device = cairo_pdf
 )
 
 # 3 ---------------
 
 ggsave(
-    plot = c, filename = "../results/tools/availability.png",
-    width = 16, height = 4, units = "in", dpi = 600
+    plot = c_1, filename = "../results/tools/availability-1.png",
+    width = 15, height = 5, units = "in", dpi = 600
 )
 
 ggsave(
-    plot = c, filename = "../results/tools/availability.pdf",
-    width = 16, height = 4, units = "in", device = cairo_pdf
+    plot = c_1, filename = "../results/tools/availability-1.svg",
+    width = 15, height = 5, units = "in"
+)
+
+ggsave(
+    plot = c_1, filename = "../results/tools/availability-1.pdf",
+    width = 15, height = 5, units = "in", device = cairo_pdf
+)
+
+ggsave(
+    plot = c_2, filename = "../results/tools/availability-2.png",
+    width = 16, height = 5, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = c_2, filename = "../results/tools/availability-2.svg",
+    width = 16, height = 5, units = "in"
+)
+
+ggsave(
+    plot = c_2, filename = "../results/tools/availability-2.pdf",
+    width = 16, height = 5, units = "in", device = cairo_pdf
 )
 
 ```
