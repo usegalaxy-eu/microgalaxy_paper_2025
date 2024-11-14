@@ -37,7 +37,7 @@ library(colorspace)
 ## THERE IS A BUG UNFORTUNATELY WITH fread FUNCTION
 ## RUN ON CONSOLE IN THIS CASE
 
-tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/tools.tsv"
+tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/curated_tools.tsv"
 
 tools_dt <- tools_url |> fread()
 ```
@@ -576,6 +576,35 @@ b <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022
 
 ```
 
+## No. of suites over time 
+
+```{r}
+d1 <- tools_dt[order(`Date of first commit of the suite`)]
+
+
+d1$ypos <- seq_along(d1$`Date of first commit of the suite`)
+
+d1_p <- d1 |>
+    ggplot(aes(`Date of first commit of the suite`, ypos)) +
+    geom_line(linewidth = .1) +
+    geom_point(shape = 21, size = 1.5, stroke = .25, fill = "grey10", color = "grey96") +
+    geom_area(alpha = .25) +
+    scale_x_date(expand = c(0.01, 0.01)) +
+    scale_y_continuous(expand = c(0, 0), breaks = seq(50, 300, by = 50), limits = c(0, 300))+
+    theme_minimal(base_family = "Calibri") +
+    theme(
+        panel.grid.major = element_line(linewidth = .45),
+        panel.grid.minor = element_line(linewidth = .35),
+        
+        axis.title.x = element_markdown(margin = margin(t = 10)),
+        axis.title.y = element_markdown(margin = margin(r = 10)),
+        
+        plot.margin = margin(20, 20, 20, 20)
+    ) +
+    labs(y = "Cumulative number of tools")
+
+```
+
 ## Saving graphs
 
 ```{r}
@@ -657,6 +686,21 @@ ggsave(
 ggsave(
     plot = c_2, filename = "../results/tools/availability-2.pdf",
     width = 16, height = 5, units = "in", device = cairo_pdf
+)
+
+ggsave(
+    plot = d1_p, filename = "../results/tools/ntools.png",
+    width = 9, height = 8, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = d1_p, filename = "../results/tools/ntools.svg",
+    width = 9, height = 8, units = "in"
+)
+
+ggsave(
+    plot = d1_p, filename = "../results/tools/ntools.pdf",
+    width = 9, height = 8, units = "in", device = cairo_pdf
 )
 
 ```
