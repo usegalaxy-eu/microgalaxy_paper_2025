@@ -26,6 +26,7 @@ library(ggh4x)
 # install.packages("extrafont")
 library(extrafont)
 
+library(paletteer)
 library(colorspace)
 ```
 
@@ -42,117 +43,72 @@ tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/
 tools_dt <- tools_url |> fread()
 ```
 
-### Exclude unnecessary columns
-
-```{r}
-tools_dt$`Galaxy tool ids` = NULL
-tools_dt$Description       = NULL
-
-tools_dt$`bio.tool id`          = NULL
-tools_dt$`bio.tool name`        = NULL
-tools_dt$`bio.tool description` = NULL
-
-tools_dt$Source = NULL
-
-tools_dt$`Conda id`      = NULL
-tools_dt$`Conda version` = NULL
-
-tools_dt$`Galaxy wrapper owner`   = NULL
-tools_dt$`Galaxy wrapper source`  = NULL
-tools_dt$`Galaxy wrapper version` = NULL
-tools_dt$`Galaxy wrapper parsed folder` = NULL
-```
-
 ## Tool Availability graph: Heatmap
 
+### Extract availability information
+
 ```{r}
-# extract only availability information --------------------
+index <- tools_dt |> colnames() |> str_subset("Number of tools on")
 
-index <- tools_dt |> 
-    colnames() |> 
-    str_subset("Tools available on")
-
-availability <- tools_dt[, c(
-    "Galaxy wrapper id", "EDAM operation (no superclasses)", 
-    index
-), with = FALSE] |> unique()
+availability <- tools_dt[, c("Suite ID", "EDAM reduced topics", index), with = FALSE] |> unique()
 
 colnames(availability) <- availability |> 
     colnames() |> 
-    str_remove_all("Tools\\ available\\ on") |> 
+    str_remove_all("Number\\ of\\ tools\\ on") |> 
     str_squish()
+```
 
-# clean out ---------------------
+### Filter out duplicates
 
-index <- which(availability$`Galaxy wrapper id` == "srst2" & availability$`EDAM operation (no superclasses)` == "")
+```{r}
+index <- which(availability$`Suite ID` == "srst2" & availability$`EDAM reduced topics` == "")
 
 availability <- availability[-index]
+```
 
-# Hierarchical clustering ---------------------
+### Hierarchical clustering
 
-mm <- availability[, -c(1, 2)] |> 
-    setDF(rownames = availability$`Galaxy wrapper id`) |> 
-    as.matrix()
+```{r}
+mm <- availability[, -c(1, 2)] |> as.matrix(rownames = availability$`Suite ID`)
 
 mm_c <- mm |> dist(method = "manhattan") |> hclust(method = "ward.D2")
 mm_r <- t(mm) |> dist(method = "manhattan") |> hclust(method = "ward.D2")
+```
 
-# plotting data -----------------------
+### Construct plotting data
 
-d <- availability |> 
-    melt(
-        id.vars = c("Galaxy wrapper id", "EDAM operation (no superclasses)"), 
-        variable.factor = FALSE, value.factor = FALSE
-    )
-
+```{r}
+d <- availability |> melt(id.vars = c("Suite ID", "EDAM reduced topics"), variable.factor = FALSE, value.factor = FALSE)
 d <- d[which(value >= 1)]
 
-d$`Galaxy wrapper id` = d$`Galaxy wrapper id` |> factor(levels = mm_c$labels[mm_c$order |> rev()])
-d$variable = d$variable |> factor(levels = mm_r$labels[mm_r$order |> rev()])
+d$`Suite ID` <- d$`Suite ID` |> factor(levels = mm_c$labels[mm_c$order |> rev()])
+d$variable <- d$variable |> factor(levels = mm_r$labels[mm_r$order |> rev()])
 
-d$fct <- ifelse(
-    d$variable |> str_detect("UseGalaxy"),
-    "UseGalaxy", "vOther"
-)
+d$fct <- ifelse(d$variable |> str_detect("UseGalaxy"), "UseGalaxy", "vOther")
 
-index = d[which(fct == "UseGalaxy")][[1]] |> unique()
+index <- d[which(fct == "UseGalaxy")][[1]] |> unique()
 
-p <- d[which(`Galaxy wrapper id` %in% index)]
+p <- d[which(`Suite ID` %in% index)]
 
-# t <- p$`EDAM operation (no superclasses)` |>
-#     str_split("\\,") |> unlist() |>
-#     str_squish() |>
-#     table() |> sort(decreasing = TRUE) |>
-#     as.data.table()
-# 
-# t <- t[which(V1 != ""), head(.SD, 10)]
+p2 <- p |> tidyr::separate_rows("EDAM reduced topics", sep = ",") |> setDT()
 
+p2$`EDAM reduced topics` <- p2$`EDAM reduced topics` |> str_squish()
+p2$`EDAM reduced topics` <- p2$`EDAM reduced topics` |> str_wrap(width = 10)
 
-p2 <- p |>
-    tidyr::separate_rows("EDAM operation (no superclasses)", sep = ",") |>
-    setDT()
-
-p2$`EDAM operation (no superclasses)` <- p2$`EDAM operation (no superclasses)` |> str_squish()
-
-p2$`EDAM operation (no superclasses)` <- p2$`EDAM operation (no superclasses)` |> str_wrap(width = 10)
-
-t <- p2[, by = "EDAM operation (no superclasses)", .(N = `Galaxy wrapper id` |> unique() |> length())]
+t <- p2[, by = "EDAM reduced topics", .(N = `Suite ID` |> unique() |> length())]
 t <- t[order(-N)]
-t <- t[which(`EDAM operation (no superclasses)` != ""), head(.SD, 10)]
+t <- t[which(`EDAM reduced topics` != ""), head(.SD, 5)]
 
-p2$edam_clean <- ifelse(
-    p2$`EDAM operation (no superclasses)` %in% t$`EDAM operation (no superclasses)`, 
-    p2$`EDAM operation (no superclasses)`,
-    "Other"
-)
+p2$edam_clean <- ifelse(p2$`EDAM reduced topics` %in% t$`EDAM reduced topics`, p2$`EDAM reduced topics`, "Other")
+p2$edam_clean <- p2$edam_clean |> factor(levels = c(t$`EDAM reduced topics`, "Other"))
+```
 
-p2$edam_clean <- p2$edam_clean |> factor(levels = c(t$`EDAM operation (no superclasses)`, "Other"))
+### Top 5 EDAM Operations
 
-# plot-1 ---------------------
-
+```{r}
 c_1 <- p2[which(edam_clean != "Other")] |> 
     
-    ggplot(aes(`Galaxy wrapper id`, variable)) + 
+    ggplot(aes(`Suite ID`, variable)) + 
     
     geom_tile(aes(fill = value), color = "grey") + 
     
@@ -189,12 +145,15 @@ c_1 <- p2[which(edam_clean != "Other")] |>
     ) +
     
     labs(x = "Galaxy Tool Suites", y = "Availability of Tool Suites Across **Servers**", fill = "No. of Tools")
+```
 
-# plot-2 ---------------------
+### All Tools suties
+
+```{r}
 
 c_2 <- p |> 
     
-    ggplot(aes(`Galaxy wrapper id`, variable)) + 
+    ggplot(aes(`Suite ID`, variable)) + 
     
     geom_tile(aes(fill = value), color = "grey") + 
     
@@ -215,7 +174,7 @@ c_2 <- p |>
         legend.position = "bottom",
         legend.title.position = "top",
         
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 3),
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 4),
         
         axis.title.y = element_markdown(),
         
@@ -234,89 +193,135 @@ c_2 <- p |>
 
 ```
 
-## EDAM operation (no superclasses) graph: Faceted scatter plot
+### Save plots
 
 ```{r}
-# split EDAM operation (no superclasses)s per tool ------------------------
-df2 = tools_dt |>
-    tidyr::separate_rows("EDAM operation (no superclasses)", sep = ",") |>
-    setDT()
+outfolder <- "../results/tools/availability-heatmap"
 
-# remove empty tools ------------------------------
-df2 = df2[which(
-    `Total tool usage (usegalaxy.eu)` != 0 & 
-        `No. of tool users (2022-2023) (usegalaxy.eu)` != 0
-)]
+dir.create(outfolder)
 
-# clean `EDAM operation (no superclasses)` column -----------------
-df2$`EDAM operation (no superclasses)` = df2$`EDAM operation (no superclasses)` |> str_squish()
-df2$`EDAM operation (no superclasses)` = ifelse(df2$`EDAM operation (no superclasses)` == "", "No Operation", df2$`EDAM operation (no superclasses)`)
-
-# find most top #11 EDAM operation (no superclasses)s ------------------
-st = df2[, by = `EDAM operation (no superclasses)`, .(N = `Galaxy wrapper id` |> unique() |> length())]
-st = st[order(-N)]
-st = st[seq_len(11)]
-
-# define every other operation as Other Operations --------------
-df2$cluster = ifelse(
-    df2$`EDAM operation (no superclasses)` %in% st$`EDAM operation (no superclasses)`,
-    df2$`EDAM operation (no superclasses)`, "Other Operations"
+ggsave(
+    plot = c_1, filename = paste0(outfolder, "/heatmap-1.png"),
+    width = 18, height = 5, units = "in", dpi = 600
 )
 
-# keep only necessary columns ----------------------
-df2 = df2[, c(
-    "Galaxy wrapper id", 
-    "Total tool usage (usegalaxy.eu)", 
-    "No. of tool users (2022-2023) (usegalaxy.eu)", 
-    "cluster"
-)] |> unique()
+ggsave(
+    plot = c_1, filename = paste0(outfolder, "/heatmap-1.svg"),
+    width = 18, height = 5, units = "in"
+)
 
-# number of tools per operation -------------------------
-df2[, by = cluster, N := `Galaxy wrapper id` |> unique() |> length()]
+ggsave(
+    plot = c_1, filename = paste0(outfolder, "/heatmap-1.pdf"),
+    width = 18, height = 5, units = "in", device = cairo_pdf
+)
 
-# define factor levels of cluster column -------------------
-df2$cluster = df2$cluster |> 
-    factor(
-        levels = c(
-            st$`EDAM operation (no superclasses)` |> str_subset("No Operation", negate = TRUE), 
-            "Other Operations", "No Operation"
-        )
-    )
+ggsave(
+    plot = c_2, filename = paste0(outfolder, "/heatmap-2.png"),
+    width = 15, height = 5, units = "in", dpi = 600
+)
 
-df2 = df2[order(cluster)]
+ggsave(
+    plot = c_2, filename = paste0(outfolder, "/heatmap-2.svg"),
+    width = 15, height = 5, units = "in"
+)
 
-# define strip for plotting  ----------------------
-df2$strip = paste0("**", df2$cluster, "** (", df2$N, " tools)")
-df2$strip = df2$strip |> factor(levels = df2$strip |> unique())
+ggsave(
+    plot = c_2, filename = paste0(outfolder, "/heatmap-2.pdf"),
+    width = 15, height = 5, units = "in", device = cairo_pdf
+)
+```
 
-# gather highlighting Galaxy wrapper tools for plotting --------------
+## EDAM operation: Scatter plot
 
-df2 <- df2[order(
-    -`No. of tool users (2022-2023) (usegalaxy.eu)`,
-    -`Total tool usage (usegalaxy.eu)`
-)]
+### Split EDAM operation per tool
 
-h0 <- df2[, by = strip, head(.SD, 10)]
+```{r}
+df2 = tools_dt |> tidyr::separate_rows("EDAM reduced operations", sep = ",") |> setDT()
 
-# h0 = rbind(
-#     df2[, by = strip, .SD[which.max(`Total tool usage (usegalaxy.eu)`)]],
-#     df2[, by = strip, .SD[which.max(`No. of tool users (2022-2023) (usegalaxy.eu)`)]]
-# ) |> unique()
-
-# create graph ----------------------------------------------
-a <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
+xvar <- "Suite runs (last 5 years) on main servers"
+yvar <- "Suite users (last 5 years) on main servers"
     
-    geom_point(shape = 21, size = 2, stroke = .25, 
-               color = "#2E2A2B" |> darken(.5), fill = "#2E2A2B" |> lighten(.5)) +
+df2$runs  <- df2[[ xvar ]]
+df2$users <- df2[[ yvar ]]
+
+```
+
+### Remove empty tools
+
+```{r}
+df2 = df2[which(runs != 0 & users != 0)]
+```
+
+### Clean `EDAM operation (no superclasses)` column
+
+```{r}
+df2$`EDAM reduced operations` = df2$`EDAM reduced operations` |> str_squish()
+df2$`EDAM reduced operations` = ifelse(df2$`EDAM reduced operations` == "", "No Operation", df2$`EDAM reduced operations`)
+```
+
+### Find most top EDAM operations
+
+```{r}
+st = df2[, by = `EDAM reduced operations`, .(N = `Suite ID` |> unique() |> length())]
+st = st[order(-N)]
+st = st[which(`EDAM reduced operations` != "No Operation")]
+
+df2$`EDAM reduced operations` <- df2$`EDAM reduced operations` |> factor(levels = c(st$`EDAM reduced operations`, "No Operation"))
+
+df2 <- df2[order(`Suite ID`, -`EDAM reduced operations`)]
+df2 <- df2[, by = `Suite ID`, head(.SD, 1)]
+```
+
+### Keep only necessary columns
+
+```{r}
+df2 = df2[, c("Suite ID", "runs", "users", "EDAM reduced operations")] |> unique()
+```
+
+
+### Define factor levels of cluster column
+
+```{r}
+st <- st[1:25]
+
+df2$cluster <- ifelse(df2$`EDAM reduced operations` %in% st$`EDAM reduced operations`, df2$`EDAM reduced operations` |> as.character(), "Other")
+df2$cluster <- df2$cluster |> factor(levels = c(st$`EDAM reduced operations`, "Other"))
+```
+
+### Define strip for plotting
+
+```{r}
+# df2$strip = paste0("**", df2$cluster, "** (", df2$N, " tools)")
+# df2$strip = df2$strip |> factor(levels = df2$strip |> unique())
+```
+
+### gather highlighting Galaxy wrapper tools for plotting
+
+```{r}
+df2 <- df2[order(-runs, -users)]
+hg0 <- df2[1:15]
+```
+
+### create graph
+
+```{r}
+ncolors <- df2$cluster |> unique() |> length()
+
+xvar <- xvar |> str_replace("Suite runs", "**Suite runs**")
+yvar <- yvar |> str_replace("Suite users", "**Suite users**")
+
+a <- df2 |>
+    
+    ggplot(aes(runs, users)) +
+    
+    geom_point(
+        shape = 21, size = 2, stroke = .25, 
+        aes(fill = cluster, color = cluster)
+    ) +
     
     geom_text_repel(
-        data = h0, inherit.aes = FALSE,
-        mapping = aes(
-            `Total tool usage (usegalaxy.eu)`,
-            `No. of tool users (2022-2023) (usegalaxy.eu)`,
-            label = `Galaxy wrapper id`
-        ),
-        bg.color = "grey96", family = "Calibri", box.padding = .5,
+        data = hg0, aes(label = `Suite ID`),
+        bg.r = .05, bg.color = "grey96", fontface = "bold", family = "Calibri", box.padding = .5,
         segment.size = .3, max.overlaps = Inf, size = 3
     ) +
     
@@ -333,14 +338,16 @@ a <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022
         breaks = c(.1, 1, 10, 100, 1000, 10000)
     ) +
     
-    facet_wrap(vars(strip), nrow = 3, axes = "all") +
+    scale_fill_manual(values = c(paletteer_d("ggsci::default_igv", ncolors - 1), "grey") |> lighten(.25), guide = guide_legend(ncol = 1, override.aes = list(size = 2.5))) +
+    scale_color_manual(values = c(paletteer_d("ggsci::default_igv", ncolors - 1), "grey") |> darken(.25), guide = "none") +
     
     coord_cartesian() +
     
     theme_minimal(base_family = "Calibri") +
     
     theme(
-        legend.position = "bottom",
+        legend.position = "right",
+        legend.title.position = "top",
         legend.justification = "left",
         
         strip.text = element_markdown(),
@@ -349,8 +356,6 @@ a <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022
         axis.title.y = element_markdown(margin = margin(r = 10)),
         
         axis.ticks = element_line(linewidth = .3),
-        
-        panel.grid.minor = element_blank(),
         panel.grid.major = element_line(linewidth = .3, linetype = "dashed", lineend = "round", color = "grey75"),
         
         panel.border = element_rect(linewidth = .3, fill = NA),
@@ -358,10 +363,7 @@ a <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022
         plot.margin = margin(20, 20, 20, 20)
     ) +
     
-    labs(
-        x = "**Total tool usage** (usegalaxy.eu)",
-        y = "**No. of tool users 2022-2023** (usegalaxy.eu)"
-    )
+    labs(x = xvar, y = yvar, fill = "EDAM operation")
 
 # df3 <- df2[, by = .(`Galaxy wrapper id`, `Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`), .(
 #     clusters = cluster |> sort() |> paste(collapse = ", "),
@@ -440,160 +442,190 @@ a <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022
 
 ```
 
-## EDAM topic (no superclasses): Faceted scatter plot
-
+### Save plot
 ```{r}
-# split EADM topics per tool ------------------------
-df2 = tools_dt |>
-    tidyr::separate_rows("EDAM topic (no superclasses)", sep = ",") |>
-    setDT()
 
-# remove empty tools ------------------
-df2 = df2[which(
-    `Total tool usage (usegalaxy.eu)` != 0 & 
-        `No. of tool users (2022-2023) (usegalaxy.eu)` != 0
-)]
+outfolder <- paste0("../results/tools/", xvar |> str_remove_all("Suite|runs|\\*|\\(|\\)") |> str_squish())
 
-# clean `EDAM topic (no superclasses)` column -------------
-df2$`EDAM topic (no superclasses)` = df2$`EDAM topic (no superclasses)` |> str_squish()
-df2$`EDAM topic (no superclasses)` = ifelse(df2$`EDAM topic (no superclasses)` == "", "No Topic", df2$`EDAM topic (no superclasses)`)
+dir.create(outfolder)
 
-# find most top #11 EDAM topic (no superclasses)s ------------------
-st = df2[, by = `EDAM topic (no superclasses)`, .(N = `Galaxy wrapper id` |> unique() |> length())]
-st = st[order(-N)]
-st = st[seq_len(11)]
-
-# define every other operation as Other Operations ------------
-df2$cluster = ifelse(
-    df2$`EDAM topic (no superclasses)` %in% st$`EDAM topic (no superclasses)`,
-    df2$`EDAM topic (no superclasses)`, "Other Topics"
+ggsave(
+    plot = a, filename = paste0(outfolder, "/tools-scatter-plot.png"),
+    width = 10, height = 8, units = "in", dpi = 600
 )
 
-# keep only necessary columns -------------------
-df2 = df2[, c(
-    "Galaxy wrapper id", 
-    "Total tool usage (usegalaxy.eu)", 
-    "No. of tool users (2022-2023) (usegalaxy.eu)", 
-    "cluster"
-)] |> unique()
+ggsave(
+    plot = a, filename = paste0(outfolder, "/tools-scatter-plot.svg"),
+    width = 12, height = 9, units = "in"
+)
 
-# number of tools per operation ------------------------
-df2 = df2[, by = cluster, N := `Galaxy wrapper id` |> unique() |> length()]
-
-# define factor levels of cluster column ----------------------
-df2$cluster = df2$cluster |> 
-    factor(
-        levels = c(
-            st$`EDAM topic (no superclasses)` |> str_subset("No Topic", negate = TRUE), 
-            "Other Topics", "No Topic"
-        )
-    )
-
-df2 = df2[order(cluster)]
-
-# define strip for plotting -------------------------------
-df2$strip = paste0("**", df2$cluster, "** (", df2$N, " tools)")
-df2$strip = df2$strip |> factor(levels = df2$strip |> unique())
-
-# gather highlighting Galaxy wrapper tools for plotting ---------------
-
-df2 <- df2[order(
-    -`No. of tool users (2022-2023) (usegalaxy.eu)`,
-    -`Total tool usage (usegalaxy.eu)`
-)]
-
-h0 <- df2[, by = strip, head(.SD, 10)]
-
-# h0 = rbind(
-#     df2[, by = strip, .SD[which.max(`Total tool usage (usegalaxy.eu)`)]],
-#     df2[, by = strip, .SD[which.max(`No. of tool users (2022-2023) (usegalaxy.eu)`)]]
-# ) |> unique()
-
-# create graph ----------------------------
-b <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
-    
-    geom_point(shape = 21, size = 2, stroke = .25, 
-               color = "#2E2A2B" |> darken(.5), fill = "#2E2A2B" |> lighten(.5)) +
-    
-    geom_text_repel(
-        data = h0, inherit.aes = FALSE, 
-        mapping = aes(
-            `Total tool usage (usegalaxy.eu)`, 
-            `No. of tool users (2022-2023) (usegalaxy.eu)`, 
-            label = `Galaxy wrapper id`
-        ),
-        bg.color = "grey96", family = "Calibri", box.padding = .5,
-        segment.size = .3, size = 3, max.overlaps = Inf
-    ) +
-    
-    scale_x_continuous(
-        trans = "log10",  # expand = c(0, 0), limits = c(1, 10000000),
-        breaks = scales::trans_breaks("log10", function(x) 10^x),
-        labels = scales::trans_format("log10", scales::math_format(10^.x))
-    ) +
-    
-    scale_y_continuous(
-        trans = "log10", # limits = c(1, 10000),
-        labels = scales::comma, # expand = c(0, 0), 
-        breaks = c(.1, 1, 10, 100, 1000, 10000)
-    ) +
-    
-    guides(
-        alpha = guide_legend(
-            title = "Perc. of observations (tools)",
-            title.position = "top", 
-            title.theme = element_text(family = "Calibri")
-        )
-    ) +
-    
-    facet_wrap(vars(strip), nrow = 3, axes = "all") +
-    
-    coord_cartesian() +
-    
-    theme_minimal(base_family = "Calibri") +
-    
-    theme(
-        legend.position = "bottom",
-        legend.justification = "left",
-        
-        strip.text = element_markdown(),
-        
-        axis.title.x = element_markdown(margin = margin(t = 10)),
-        axis.title.y = element_markdown(margin = margin(r = 10)),
-        
-        axis.ticks = element_line(linewidth = .3),
-        
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_line(linewidth = .3, linetype = "dashed", lineend = "round", color = "grey75"),
-        
-        panel.border = element_rect(linewidth = .3, fill = NA)
-    ) +
-    
-    labs(
-        x = "**Total tool usage** (usegalaxy.eu)",
-        y = "**No. of tool users 2022-2023** (usegalaxy.eu)"
-    )
+ggsave(
+    plot = a, filename = paste0(outfolder, "/tools-scatter-plot.pdf"),
+    width = 12, height = 9, units = "in", device = cairo_pdf
+)
 
 ```
 
-## No. of suites over time 
+## ARCHIVED EDAM topic: Faceted scatter plot
 
 ```{r}
-d1 <- tools_dt[order(`Date of first commit of the suite`)]
+# # split EADM topics per tool ------------------------
+# df2 = tools_dt |>
+#     tidyr::separate_rows("EDAM topic (no superclasses)", sep = ",") |>
+#     setDT()
+# 
+# # remove empty tools ------------------
+# df2 = df2[which(
+#     `Total tool usage (usegalaxy.eu)` != 0 & 
+#         `No. of tool users (2022-2023) (usegalaxy.eu)` != 0
+# )]
+# 
+# # clean `EDAM topic (no superclasses)` column -------------
+# df2$`EDAM topic (no superclasses)` = df2$`EDAM topic (no superclasses)` |> str_squish()
+# df2$`EDAM topic (no superclasses)` = ifelse(df2$`EDAM topic (no superclasses)` == "", "No Topic", df2$`EDAM topic (no superclasses)`)
+# 
+# # find most top #11 EDAM topic (no superclasses)s ------------------
+# st = df2[, by = `EDAM topic (no superclasses)`, .(N = `Galaxy wrapper id` |> unique() |> length())]
+# st = st[order(-N)]
+# st = st[seq_len(11)]
+# 
+# # define every other operation as Other Operations ------------
+# df2$cluster = ifelse(
+#     df2$`EDAM topic (no superclasses)` %in% st$`EDAM topic (no superclasses)`,
+#     df2$`EDAM topic (no superclasses)`, "Other Topics"
+# )
+# 
+# # keep only necessary columns -------------------
+# df2 = df2[, c(
+#     "Galaxy wrapper id", 
+#     "Total tool usage (usegalaxy.eu)", 
+#     "No. of tool users (2022-2023) (usegalaxy.eu)", 
+#     "cluster"
+# )] |> unique()
+# 
+# # number of tools per operation ------------------------
+# df2 = df2[, by = cluster, N := `Galaxy wrapper id` |> unique() |> length()]
+# 
+# # define factor levels of cluster column ----------------------
+# df2$cluster = df2$cluster |> 
+#     factor(
+#         levels = c(
+#             st$`EDAM topic (no superclasses)` |> str_subset("No Topic", negate = TRUE), 
+#             "Other Topics", "No Topic"
+#         )
+#     )
+# 
+# df2 = df2[order(cluster)]
+# 
+# # define strip for plotting -------------------------------
+# df2$strip = paste0("**", df2$cluster, "** (", df2$N, " tools)")
+# df2$strip = df2$strip |> factor(levels = df2$strip |> unique())
+# 
+# # gather highlighting Galaxy wrapper tools for plotting ---------------
+# 
+# df2 <- df2[order(
+#     -`No. of tool users (2022-2023) (usegalaxy.eu)`,
+#     -`Total tool usage (usegalaxy.eu)`
+# )]
+# 
+# h0 <- df2[, by = strip, head(.SD, 10)]
+# 
+# # h0 = rbind(
+# #     df2[, by = strip, .SD[which.max(`Total tool usage (usegalaxy.eu)`)]],
+# #     df2[, by = strip, .SD[which.max(`No. of tool users (2022-2023) (usegalaxy.eu)`)]]
+# # ) |> unique()
+# 
+# # create graph ----------------------------
+# b <- ggplot(df2, aes(`Total tool usage (usegalaxy.eu)`, `No. of tool users (2022-2023) (usegalaxy.eu)`)) +
+#     
+#     geom_point(shape = 21, size = 2, stroke = .25, 
+#                color = "#2E2A2B" |> darken(.5), fill = "#2E2A2B" |> lighten(.5)) +
+#     
+#     geom_text_repel(
+#         data = h0, inherit.aes = FALSE, 
+#         mapping = aes(
+#             `Total tool usage (usegalaxy.eu)`, 
+#             `No. of tool users (2022-2023) (usegalaxy.eu)`, 
+#             label = `Galaxy wrapper id`
+#         ),
+#         bg.color = "grey96", family = "Calibri", box.padding = .5,
+#         segment.size = .3, size = 3, max.overlaps = Inf
+#     ) +
+#     
+#     scale_x_continuous(
+#         trans = "log10",  # expand = c(0, 0), limits = c(1, 10000000),
+#         breaks = scales::trans_breaks("log10", function(x) 10^x),
+#         labels = scales::trans_format("log10", scales::math_format(10^.x))
+#     ) +
+#     
+#     scale_y_continuous(
+#         trans = "log10", # limits = c(1, 10000),
+#         labels = scales::comma, # expand = c(0, 0), 
+#         breaks = c(.1, 1, 10, 100, 1000, 10000)
+#     ) +
+#     
+#     guides(
+#         alpha = guide_legend(
+#             title = "Perc. of observations (tools)",
+#             title.position = "top", 
+#             title.theme = element_text(family = "Calibri")
+#         )
+#     ) +
+#     
+#     facet_wrap(vars(strip), nrow = 3, axes = "all") +
+#     
+#     coord_cartesian() +
+#     
+#     theme_minimal(base_family = "Calibri") +
+#     
+#     theme(
+#         legend.position = "bottom",
+#         legend.justification = "left",
+#         
+#         strip.text = element_markdown(),
+#         
+#         axis.title.x = element_markdown(margin = margin(t = 10)),
+#         axis.title.y = element_markdown(margin = margin(r = 10)),
+#         
+#         axis.ticks = element_line(linewidth = .3),
+#         
+#         panel.grid.minor = element_blank(),
+#         panel.grid.major = element_line(linewidth = .3, linetype = "dashed", lineend = "round", color = "grey75"),
+#         
+#         panel.border = element_rect(linewidth = .3, fill = NA)
+#     ) +
+#     
+#     labs(
+#         x = "**Total tool usage** (usegalaxy.eu)",
+#         y = "**No. of tool users 2022-2023** (usegalaxy.eu)"
+#     )
 
+```
 
-d1$ypos <- seq_along(d1$`Date of first commit of the suite`)
+## No. of Tool Suites over time
+
+```{r}
+d1 <- tools_dt[order(`Suite first commit date`)]
+
+d1$ypos <- seq_along(d1$`Suite first commit date`)
+
+d1$year <- d1$`Suite first commit date` |> lubridate::year()
+
+d2 <- d1[, by = year, .(N = max(ypos))]
+
+d2$year <- paste0(d2$year, "-01-01") |> lubridate::as_date()
 
 d1_p <- d1 |>
-    ggplot(aes(`Date of first commit of the suite`, ypos)) +
-    geom_line(linewidth = .1) +
-    geom_point(shape = 21, size = 1.5, stroke = .25, fill = "grey10", color = "grey96") +
+    ggplot(aes(`Suite first commit date`, ypos)) +
+    geom_line(linewidth = .25, color = "#3C3C3C") +
     geom_area(alpha = .25) +
+    
+    # geom_point(data = d2, aes(year, N)) +
     scale_x_date(expand = c(0.01, 0.01)) +
-    scale_y_continuous(expand = c(0, 0), breaks = seq(50, 300, by = 50), limits = c(0, 300))+
+    scale_y_continuous(expand = c(0, 0), breaks = seq(50, 300, by = 50), limits = c(0, 235))+
     theme_minimal(base_family = "Calibri") +
     theme(
-        panel.grid.major = element_line(linewidth = .45),
+        panel.grid.major = element_line(linewidth = .45, color = "grey85"),
         panel.grid.minor = element_line(linewidth = .35),
         
         axis.title.x = element_markdown(margin = margin(t = 10)),
@@ -602,110 +634,128 @@ d1_p <- d1 |>
         plot.margin = margin(20, 20, 20, 20)
     ) +
     labs(y = "Cumulative number of tools")
-
 ```
 
-## Saving graphs
+### Save plot
 
 ```{r}
 
-dir.create("../results/tools", showWarnings = FALSE)
+outfolder <- "../results/tools/number of tools"
 
-# 1 ---------------
-
-ggsave(
-    plot = a, filename = "../results/tools/edam-operations.png",
-    width = 12, height = 9, units = "in", dpi = 600
-)
+dir.create(outfolder)
 
 ggsave(
-    plot = a, filename = "../results/tools/edam-operations.svg",
-    width = 12, height = 9, units = "in"
-)
-
-ggsave(
-    plot = a, filename = "../results/tools/edam-operations.pdf",
-    width = 12, height = 9, units = "in", device = cairo_pdf
-)
-
-
-# ggsave(
-#     plot = a1, filename = "../results/tools/edam-operations-1.png",
-#     width = 12, height = 10, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = a1, filename = "../results/tools/edam-operations-1.pdf",
-#     width = 12, height = 10, units = "in", device = cairo_pdf
-# )
-
-# 2 ---------------
-
-ggsave(
-    plot = b, filename = "../results/tools/edam-topics.png",
-    width = 12, height = 9, units = "in", dpi = 600
-)
-
-ggsave(
-    plot = b, filename = "../results/tools/edam-topics.svg",
-    width = 12, height = 9, units = "in"
-)
-
-ggsave(
-    plot = b, filename = "../results/tools/edam-topics.pdf",
-    width = 12, height = 9, units = "in", device = cairo_pdf
-)
-
-# 3 ---------------
-
-ggsave(
-    plot = c_1, filename = "../results/tools/availability-1.png",
-    width = 15, height = 5, units = "in", dpi = 600
-)
-
-ggsave(
-    plot = c_1, filename = "../results/tools/availability-1.svg",
-    width = 15, height = 5, units = "in"
-)
-
-ggsave(
-    plot = c_1, filename = "../results/tools/availability-1.pdf",
-    width = 15, height = 5, units = "in", device = cairo_pdf
-)
-
-ggsave(
-    plot = c_2, filename = "../results/tools/availability-2.png",
-    width = 16, height = 5, units = "in", dpi = 600
-)
-
-ggsave(
-    plot = c_2, filename = "../results/tools/availability-2.svg",
-    width = 16, height = 5, units = "in"
-)
-
-ggsave(
-    plot = c_2, filename = "../results/tools/availability-2.pdf",
-    width = 16, height = 5, units = "in", device = cairo_pdf
-)
-
-ggsave(
-    plot = d1_p, filename = "../results/tools/ntools.png",
+    plot = d1_p, filename = paste0(outfolder, "/ntools.png"),
     width = 9, height = 8, units = "in", dpi = 600
 )
 
 ggsave(
-    plot = d1_p, filename = "../results/tools/ntools.svg",
+    plot = d1_p, filename = paste0(outfolder, "/ntools.svg"),
     width = 9, height = 8, units = "in"
 )
 
 ggsave(
-    plot = d1_p, filename = "../results/tools/ntools.pdf",
+    plot = d1_p, filename = paste0(outfolder, "/ntools.pdf"),
     width = 9, height = 8, units = "in", device = cairo_pdf
 )
-
 ```
 
+## ARCHIVED Saving graphs
 
+```{r}
+# 
+# dir.create("../results/tools", showWarnings = FALSE)
+# 
+# # 1 ---------------
+# 
+# ggsave(
+#     plot = a, filename = "../results/tools/edam-operations.png",
+#     width = 12, height = 9, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = a, filename = "../results/tools/edam-operations.svg",
+#     width = 12, height = 9, units = "in"
+# )
+# 
+# ggsave(
+#     plot = a, filename = "../results/tools/edam-operations.pdf",
+#     width = 12, height = 9, units = "in", device = cairo_pdf
+# )
+# 
+# 
+# # ggsave(
+# #     plot = a1, filename = "../results/tools/edam-operations-1.png",
+# #     width = 12, height = 10, units = "in", dpi = 600
+# # )
+# # 
+# # ggsave(
+# #     plot = a1, filename = "../results/tools/edam-operations-1.pdf",
+# #     width = 12, height = 10, units = "in", device = cairo_pdf
+# # )
+# 
+# # 2 ---------------
+# 
+# ggsave(
+#     plot = b, filename = "../results/tools/edam-topics.png",
+#     width = 12, height = 9, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = b, filename = "../results/tools/edam-topics.svg",
+#     width = 12, height = 9, units = "in"
+# )
+# 
+# ggsave(
+#     plot = b, filename = "../results/tools/edam-topics.pdf",
+#     width = 12, height = 9, units = "in", device = cairo_pdf
+# )
+# 
+# # 3 ---------------
+# 
+# ggsave(
+#     plot = c_1, filename = "../results/tools/availability-1.png",
+#     width = 15, height = 5, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = c_1, filename = "../results/tools/availability-1.svg",
+#     width = 15, height = 5, units = "in"
+# )
+# 
+# ggsave(
+#     plot = c_1, filename = "../results/tools/availability-1.pdf",
+#     width = 15, height = 5, units = "in", device = cairo_pdf
+# )
+# 
+# ggsave(
+#     plot = c_2, filename = "../results/tools/availability-2.png",
+#     width = 16, height = 5, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = c_2, filename = "../results/tools/availability-2.svg",
+#     width = 16, height = 5, units = "in"
+# )
+# 
+# ggsave(
+#     plot = c_2, filename = "../results/tools/availability-2.pdf",
+#     width = 16, height = 5, units = "in", device = cairo_pdf
+# )
+# 
+# ggsave(
+#     plot = d1_p, filename = "../results/tools/ntools.png",
+#     width = 9, height = 8, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = d1_p, filename = "../results/tools/ntools.svg",
+#     width = 9, height = 8, units = "in"
+# )
+# 
+# ggsave(
+#     plot = d1_p, filename = "../results/tools/ntools.pdf",
+#     width = 9, height = 8, units = "in", device = cairo_pdf
+# )
 
-
-
+```
