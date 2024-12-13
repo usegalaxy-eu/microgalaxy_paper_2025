@@ -39,11 +39,15 @@ library(packcircles)
 ## THERE IS A BUG UNFORTUNATELY WITH fread FUNCTION
 ## RUN ON CONSOLE IN THIS CASE
 
-tutorials_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/tutorials.tsv"
-tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/tools.tsv"
+microGalaxy_tutorials_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/tutorials.tsv"
+microGalaxy_tools_url     <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/curated_tools.tsv"
+all_tools_url            <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/all/resources/tools.tsv"
 
-tutorials_dt <- tutorials_url |> fread()
-tools_dt <- tools_url |> fread()
+
+microGalaxy_tutorials_dt <- microGalaxy_tutorials_url |> fread()
+microGalaxy_tools_dt     <- microGalaxy_tools_url |> fread()
+all_tools_dt            <- all_tools_url |> fread()
+
 ```
 
 ## Compute number of tools and number of microGalaxy tools per tutorial
@@ -52,61 +56,56 @@ tools_dt <- tools_url |> fread()
 
 # 1 ------------------------
 
-dt1 <- tutorials_dt$Tools |> 
+dt1 <- microGalaxy_tutorials_dt$Tools |> 
     str_split("\\,") |>
     lapply(str_squish) |>
-    lapply(function(q) data.table("Galaxy tool id" = q)) |>
+    lapply(function(q) data.table("Tool ID" = q)) |>
     rbindlist(idcol = "Topic_id")
 
-dt1$Topic = tutorials_dt[dt1$Topic_id]$Topic
-dt1$Title = tutorials_dt[dt1$Topic_id]$Title
+dt1$Topic <- microGalaxy_tutorials_dt[dt1$Topic_id]$Topic
+dt1$Title <- microGalaxy_tutorials_dt[dt1$Topic_id]$Title
 
-dt1$`EDAM topic` = tutorials_dt[dt1$Topic_id]$`EDAM topic`
-dt1$`EDAM operation` = tutorials_dt[dt1$Topic_id]$`EDAM operation`
+dt1$`EDAM topic`     <- microGalaxy_tutorials_dt[dt1$Topic_id]$`EDAM topic`
+dt1$`EDAM operation` <- microGalaxy_tutorials_dt[dt1$Topic_id]$`EDAM operation`
 
 # 2 ------------------------------------
 
-tmp <- tools_dt[, c("Galaxy wrapper id", "Galaxy tool ids"), with = FALSE] |> unique()
-tmp <- tmp[which(`Galaxy tool ids` != "")]
-
-tmp <- tmp |>
-    tidyr::separate_rows("Galaxy tool ids", sep = ",") |>
-    setDT()
-
+tmp <- all_tools_dt[, c("Suite ID", "Tool IDs"), with = FALSE] |> unique()
+tmp <- tmp[which(`Tool IDs` != "")]
+tmp <- tmp |> tidyr::separate_rows("Tool IDs", sep = ",") |> setDT()
+tmp$`Tool IDs` <- tmp$`Tool IDs` |> str_squish()
 
 # 3 ------------------
 
-index = match(dt1$`Galaxy tool id`, tmp$`Galaxy tool ids`)
+index = match(dt1$`Tool ID`, tmp$`Tool IDs`)
 
-dt1$`Galaxy wrapper id (microGalaxy)` = tmp[index][[1]]
+dt1$`Suite ID` = tmp[index][[1]]
 
 # 4 ----------------------------
 
-tutorials_dt$`Total No. of tools` = tutorials_dt$Tools |>
+microGalaxy_tutorials_dt$`Total No. of tools` = microGalaxy_tutorials_dt$Tools |>
     str_split("\\,") |>
     lapply(str_squish) |>
     lapply(length) |>
     unlist()
 
-tutorials_dt$`No. of microGalaxy related tools` = tutorials_dt$Tools |>
+microGalaxy_tutorials_dt$`No. of microGalaxy related tools` = microGalaxy_tutorials_dt$Tools |>
     str_split("\\,") |>
     lapply(str_squish) |>
-    lapply(function(q) which(q %in% tmp$`Galaxy tool ids`) |> length() ) |>
+    lapply(function(q) which(q %in% tmp$`Tool IDs`) |> length() ) |>
     unlist()
 
-tutorials_dt$`No. of other tools` = tutorials_dt$`Total No. of tools` - tutorials_dt$`No. of microGalaxy tools`
+microGalaxy_tutorials_dt$`No. of other tools` = microGalaxy_tutorials_dt$`Total No. of tools` - microGalaxy_tutorials_dt$`No. of microGalaxy related tools`
 
 ```
 
 ### Exclude unnecessary columns
 
 ```{r}
-tutorials_dt$Topic = NULL
-
-tutorials_dt$Link = NULL
-
-tutorials_dt$`Servers with precise tool versions` = NULL
-tutorials_dt$`Servers with tool but different versions` = NULL
+microGalaxy_tutorials_dt$Topic                                      <- NULL
+microGalaxy_tutorials_dt$Link                                       <- NULL
+microGalaxy_tutorials_dt$`Servers with precise tool versions`       <- NULL
+microGalaxy_tutorials_dt$`Servers with tool but different versions` <- NULL
 ```
 
 ## Tools coverage graph: Bar plot
@@ -163,28 +162,35 @@ tutorials_dt$`Servers with tool but different versions` = NULL
 
 ```{r}
 
-dt1$`Galaxy wrapper id (microGalaxy)` <- ifelse(
-    is.na(dt1$`Galaxy wrapper id (microGalaxy)`),
-    "Not Available",
-    dt1$`Galaxy wrapper id (microGalaxy)`
-)
+dt1$`Suite ID` <- ifelse(is.na(dt1$`Suite ID`) | dt1$`Suite ID` == "", "Not Available", dt1$`Suite ID`)
 
-c_r <- dt1[, by = Title, .(
-    N = `Galaxy wrapper id (microGalaxy)` |> unique() |> length()
-)]
+dt1 <- dt1[which(`Suite ID` != "Not Available")]
 
-r_r <- dt1[, by = `Galaxy wrapper id (microGalaxy)`, .(
-    N = Title |> unique() |> length()
-)]
+dt1$value <- 1
 
-c_r <- c_r[order(N)]
-r_r <- r_r[order(-N)]
+mm <- dt1[, c("Title", "Suite ID", "value"), with = FALSE] |> 
+    unique() |> 
+    dcast(Title ~ `Suite ID`, value.var = "value", fill = 0) |> 
+    as.matrix(rownames = "Title")
 
-dt1$Title <- dt1$Title |> factor(c_r$Title)
-dt1$`Galaxy wrapper id (microGalaxy)` <- dt1$`Galaxy wrapper id (microGalaxy)` |> factor(levels = r_r$`Galaxy wrapper id (microGalaxy)`)
+
+hc_x <- mm |> t() |> dist() |> hclust("ward.D2")
+hc_y <- mm |> dist() |> hclust("ward.D2")
+
+
+
+
+# c_r <- dt1[, by = Title, .(N = `Suite ID` |> unique() |> length())]
+# r_r <- dt1[, by = `Suite ID`, .(N = Title |> unique() |> length())]
+
+# c_r <- c_r[order(N)]
+# r_r <- r_r[order(-N)]
+
+dt1$Title <- dt1$Title |> factor(hc_y$labels[hc_y$order] |> rev())
+dt1$`Suite ID` <- dt1$`Suite ID` |> factor(hc_x$labels[hc_x$order] |> rev())
 
 a_1 <- dt1 |>
-    ggplot(aes(`Galaxy wrapper id (microGalaxy)`, Title)) +
+    ggplot(aes(`Suite ID`, Title)) +
     geom_tile(color = "grey96") +
     
     scale_x_discrete(expand = c(0, 0)) +
@@ -205,42 +211,83 @@ a_1 <- dt1 |>
     
     labs(y = "Tutorials", x = "Galaxy Tool Suites")
 
-dt2 <- dt1 |>
-    tidyr::separate_rows("EDAM topic", sep = ",") |>
-    setDT()
 
-dt2$`EDAM topic` <- dt2$`EDAM topic` |> str_squish()
+edam_operations <- dt1$`EDAM operation` |>
+    str_split("\\,") |>
+    unlist() |>
+    str_squish() |>
+    table() |>
+    as.data.table()
 
-t <- dt2[, by = "EDAM topic", .(N = Title |> unique() |> length())]
-t <- t[order(-N)]
-t <- t[, head(.SD, 10)]
+edam_topics <- dt1$`EDAM topic` |>
+    str_split("\\,") |>
+    unlist() |>
+    str_squish() |>
+    table() |>
+    as.data.table()
 
-dt2$edam_clean <- ifelse(
-    dt2$`EDAM topic` %in% t$`EDAM topic`, 
-    dt2$`EDAM topic`,
-    "Other"
-)
 
-dt2$edam_clean <- dt2$edam_clean |> factor(levels = c(t$`EDAM topic`, "Other"))
+edam_operations <- edam_operations[order(-N)] |> head(4)
+edam_topics     <- edam_topics[order(-N)] |> head(4)
 
-a_2 <- dt2[which(edam_clean != "Other")] |>
-    ggplot(aes(`Galaxy wrapper id (microGalaxy)`, Title)) +
-    geom_tile(color = "grey96") +
+
+dt2 <- dt1 |> tidyr::separate_rows("EDAM topic", sep = ",") |> setDT()
+dt2 <- dt2 |> tidyr::separate_rows("EDAM operation", sep = ",") |> setDT()
+
+dt2$`EDAM topic`     <- dt2$`EDAM topic` |> str_squish() |> str_wrap(15)
+dt2$`EDAM operation` <- dt2$`EDAM operation` |> str_squish() |> str_wrap(15)
+
+edam_topics$V1     <- edam_topics$V1 |> str_wrap(15)
+edam_operations$V1 <- edam_operations$V1 |> str_wrap(15)
+
+dt2$`EDAM topic`     <- ifelse(dt2$`EDAM topic` %in% edam_topics$V1, dt2$`EDAM topic`, "Other")
+dt2$`EDAM operation` <- ifelse(dt2$`EDAM operation` %in% edam_operations$V1, dt2$`EDAM operation`, "Other")
+
+dt2$`EDAM topic`     <- dt2$`EDAM topic` |> factor(c(edam_topics$V1, "Other")) 
+dt2$`EDAM operation` <- dt2$`EDAM operation` |> factor(c(edam_operations$V1, "Other")) 
+
+# t <- dt2[, by = "EDAM topic", .(N = Title |> unique() |> length())]
+# t <- t[order(-N)]
+# t <- t[, head(.SD, 10)]
+# 
+# dt2$edam_clean <- ifelse(
+#     dt2$`EDAM topic` %in% t$`EDAM topic`, 
+#     dt2$`EDAM topic`,
+#     "Other"
+# )
+# 
+# dt2$edam_clean <- dt2$edam_clean |> factor(levels = c(t$`EDAM topic`, "Other"))
+
+a_2 <- dt2 |>
+    ggplot(aes(`Suite ID`, Title)) +
+    geom_tile(color = "white") +
     
     scale_x_discrete(expand = c(0, 0)) +
     scale_y_discrete(expand = c(0, 0)) +
     
-    facet_grid(rows = vars(edam_clean), scales = "free", space = "free") +
+    # facet_grid(rows = vars(edam_clean), scales = "free", space = "free") +
+    
+    # facet_nested_wrap(vars(`EDAM topic`, `EDAM operation`)) +
+    
+    facet_grid2(
+        rows = vars(`EDAM topic`),
+        cols = vars(`EDAM operation`),
+        space = "free",
+        scales = "free"
+    ) +
     
     theme_minimal(base_family = "Calibri") +
     theme(
-        axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+        axis.text.x = element_text(size = 2, angle = 90, hjust = 1, vjust = .5),
         axis.text.y = element_text(size = 6),
         
-        panel.border = element_rect(fill = NA, linewidth = .3),
-        axis.ticks.x = element_line(linewidth = .3),
+        axis.title.x = element_text(margin = margin(t = 10)),
+        axis.title.y = element_text(margin = margin(r = 10)),
         
-        strip.text.x = element_blank(),
+        panel.border = element_rect(fill = NA, color = "grey", linewidth = .3),
+        # axis.ticks = element_line(linewidth = .3, color = "grey"),
+        
+        strip.text.x = element_text(face = "bold"),
         strip.text.y = element_text(face = "bold", angle = 0, hjust = 0),
         
         panel.grid.minor = element_blank(),
