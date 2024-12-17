@@ -178,8 +178,6 @@ hc_x <- mm |> t() |> dist() |> hclust("ward.D2")
 hc_y <- mm |> dist() |> hclust("ward.D2")
 
 
-
-
 # c_r <- dt1[, by = Title, .(N = `Suite ID` |> unique() |> length())]
 # r_r <- dt1[, by = `Suite ID`, .(N = Title |> unique() |> length())]
 
