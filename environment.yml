@@ -5,3 +5,7 @@ channels:
 dependencies:
 - jupyter
 - pandas
+- matplotlib
+- pyzotero
+- scholarly
+- fake-useragent
