@@ -1,0 +1,176 @@
+---
+title: "workflows graphs"
+author: "Nikos Pechlivanis"
+date: "2024-12-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load `libraries`
+
+```{r message=FALSE}
+# install.packages("data.table")
+library(data.table)
+# install.packages("stringr")
+library(stringr)
+
+# install.packages(c("ggplot2", "ggrepel", "ggtext", "ggh4x"))
+library(ggplot2)
+library(ggrepel)
+library(ggtext)
+library(ggh4x)
+
+library(shadowtext)
+
+# install.packages("extrafont")
+library(extrafont)
+
+library(packcircles)
+```
+
+## Load input dataset
+
+```{r loaddata, include = FALSE}
+
+## THIS SECTION MIGHT THROUGH AN ERROR
+## THERE IS A BUG UNFORTUNATELY WITH fread FUNCTION
+## RUN ON CONSOLE IN THIS CASE
+
+workflows_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/workflows.tsv"
+all_tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/all/resources/tools.tsv"
+
+workflows_dt <- workflows_url |> fread(sep = "\t")
+all_tools_dt <- all_tools_url |> fread()
+```
+
+## Extract Tool Suite IDs
+
+```{r}
+workflows_dt <- workflows_dt |> tidyr::separate_rows("Tools", sep = ",") |> setDT()
+all_tools_dt <- all_tools_dt |> tidyr::separate_rows("Tool IDs", sep = ",") |> setDT()
+
+workflows_dt$Tools <- workflows_dt$Tools |> str_squish()
+all_tools_dt$`Tool IDs` <- all_tools_dt$`Tool IDs` |> str_squish()
+
+index <- match(workflows_dt$Tools, all_tools_dt$`Tool IDs`)
+
+workflows_dt$`Suite ID` <- all_tools_dt[index]$`Suite ID`
+```
+
+## Workflows coverage plot: Heatmap
+
+```{r}
+
+dt1 <- workflows_dt |> tidyr::separate_rows("EDAM topics", sep = ",") |> setDT()
+dt1 <- dt1 |> tidyr::separate_rows("EDAM operations", sep = ",") |> setDT()
+
+dt1$`EDAM topics`    <- dt1$`EDAM topics` |> str_squish()
+dt1$`EDAM operation` <- dt1$`EDAM operation` |> str_squish()
+
+dt1 <- dt1[which(!is.na(`Suite ID`)), c("Name", "Suite ID", "EDAM topics", "EDAM operation"), with = FALSE] |> unique()
+
+dt1$`EDAM topics` <- ifelse(dt1$`EDAM topics` == "", "Other", dt1$`EDAM topics`) |> str_wrap(15)
+dt1$`EDAM operation` <- ifelse(dt1$`EDAM operation` == "", "Other", dt1$`EDAM operation`) |> str_wrap(15)
+
+edam_operations <- dt1[, by = `EDAM operation`, .(N = Name |> unique() |> length())]
+edam_topics     <- dt1[, by = `EDAM topics`, .(N = Name |> unique() |> length())]
+
+edam_operations <- edam_operations[which(`EDAM operation` != "Other")] 
+edam_topics     <- edam_topics[which(edam_topics != "Other")]
+
+edam_operations <- edam_operations[order(-N)] |> head(4)
+edam_topics     <- edam_topics[order(-N)] |> head(4)
+
+dt1$`EDAM topics`    <- ifelse(dt1$`EDAM topics` %in% edam_topics$`EDAM topics`, dt1$`EDAM topics`, "Other")
+dt1$`EDAM operation` <- ifelse(dt1$`EDAM operation` %in% edam_operations$`EDAM operation`, dt1$`EDAM operation`, "Other")
+
+dt1$`EDAM topics`     <- dt1$`EDAM topics` |> factor(c(edam_topics$`EDAM topics`, "Other")) 
+dt1$`EDAM operation` <- dt1$`EDAM operation` |> factor(c(edam_operations$`EDAM operation`, "Other")) 
+
+
+dt1$value <- 1
+
+mm <- dt1[, c("Name", "Suite ID", "value"), with = FALSE] |> 
+    unique() |> 
+    dcast(Name ~ `Suite ID`, value.var = "value", fill = 0) |> 
+    as.matrix(rownames = "Name")
+
+hc_y <- mm |> dist() |> hclust(method = "ward.D2")
+hc_x <- mm |> t() |> dist() |> hclust(method = "ward.D2")
+
+
+dt1$Name <- dt1$Name |> factor(levels = hc_y$labels[hc_y$order])
+dt1$`Suite ID` <- dt1$`Suite ID` |> factor(levels = hc_x$labels[hc_x$order])
+
+gr <- dt1 |>
+    ggplot(aes(`Suite ID`, Name)) +
+    geom_tile(color = "white") +
+    
+    scale_x_discrete(expand = c(0, 0)) +
+    scale_y_discrete(expand = c(0, 0)) +
+    
+    # facet_grid(rows = vars(edam_clean), scales = "free", space = "free") +
+    
+    # facet_nested_wrap(vars(`EDAM topic`, `EDAM operation`)) +
+    
+    facet_grid2(
+        rows = vars(`EDAM topics`),
+        cols = vars(`EDAM operation`),
+        space = "free",
+        scales = "free"
+    ) +
+    
+    coord_cartesian(clip = "off", expand = TRUE) +
+    
+    theme_minimal(base_family = "Calibri") +
+    theme(
+        axis.text.x = element_text(size = 1, angle = 90, hjust = 1, vjust = .5),
+        axis.text.y = element_text(size = 6),
+        
+        axis.title.x = element_text(margin = margin(t = 10)),
+        axis.title.y = element_text(margin = margin(r = 10)),
+        
+        panel.border = element_rect(fill = NA, color = "grey", linewidth = .3),
+        # axis.ticks = element_line(linewidth = .3, color = "grey"),
+        
+        strip.text.x = element_text(face = "bold"),
+        strip.text.y = element_text(face = "bold", angle = 0, hjust = 0),
+        
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(linetype = "dashed", lineend = "round", linewidth = .35),
+        
+        plot.margin = margin(10, 10, 10, 10)
+    ) +
+    
+    labs(y = "Workflows", x = "Galaxy Tool Suites")
+
+```
+
+### Save plots
+
+```{r}
+outfolder <- "../results/workflows/"
+
+dir.create(outfolder)
+
+ggsave(
+    plot = gr, filename = paste0(outfolder, "/heatmap.png"),
+    width = 10, height = 10, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = gr, filename = paste0(outfolder, "/heatmap.svg"),
+    width = 10, height = 10, units = "in"
+)
+
+ggsave(
+    plot = gr, filename = paste0(outfolder, "/heatmap.pdf"),
+    width = 10, height = 10, units = "in", device = cairo_pdf
+)
+```
+
+
+
