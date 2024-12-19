@@ -2,6 +2,7 @@ name: microgalaxy_technical_paper
 channels:
 - conda-forge
 - defaults
+- bioconda
 dependencies:
 - jupyter
 - pandas
@@ -9,3 +10,16 @@ dependencies:
 - pyzotero
 - scholarly
 - fake-useragent
+- r-base
+- r-data.table
+- r-stringr
+- r-tidyr
+- r-ggplot2
+- r-ggrepel
+- r-ggtext
+- r-ggh4x
+- r-shadowtext
+- r-extrafont
+- r-paletteer
+- r-colorspace
+- r-packcircles

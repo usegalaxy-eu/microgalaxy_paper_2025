@@ -60,7 +60,7 @@ index <- match(workflows_dt$Tools, all_tools_dt$`Tool IDs`)
 workflows_dt$`Suite ID` <- all_tools_dt[index]$`Suite ID`
 ```
 
-## Workflows coverage plot: Heatmap
+## Workflows coverage plot (EDAM): Heatmap
 
 ```{r}
 
@@ -105,7 +105,7 @@ hc_x <- mm |> t() |> dist() |> hclust(method = "ward.D2")
 dt1$Name <- dt1$Name |> factor(levels = hc_y$labels[hc_y$order])
 dt1$`Suite ID` <- dt1$`Suite ID` |> factor(levels = hc_x$labels[hc_x$order])
 
-gr <- dt1 |>
+gr1 <- dt1 |>
     ggplot(aes(`Suite ID`, Name)) +
     geom_tile(color = "white") +
     
@@ -149,7 +149,92 @@ gr <- dt1 |>
 
 ```
 
-### Save plots
+## Workflows coverage plot (Source, Project): Heatmap
+
+```{r}
+
+dt1 <- workflows_dt[which(!is.na(`Suite ID`)), c("Name", "Suite ID", "Source", "Projects", "EDAM operations"), with = FALSE] |> unique()
+
+dt1$Source   <- ifelse(dt1$Source == "WorkflowHub", "WorkflowHub", "Public servers")
+dt1$Projects <- ifelse(dt1$Projects == "Intergalactic Workflow Commission (IWC)", "IWC", "Other Projects") |> str_wrap(22)
+
+dt1$cluster <- paste0(dt1$Source, "; ", dt1$Projects)
+dt1$cluster <- ifelse(dt1$cluster == "WorkflowHub; IWC", "IWC on WorkflowHub",
+                      ifelse(dt1$cluster == "WorkflowHub; Other Projects", "Other WorkflowHub workflow", "Public server workflows")) |> str_wrap(15)
+
+dt1 <- dt1 |> tidyr::separate_rows("EDAM operations", sep = "\\,") |> setDT()
+
+dt1$`EDAM operations` <- dt1$`EDAM operations` |> str_squish()
+
+
+dt1$`EDAM operations` <- dt1$`EDAM operations` |> str_wrap(15)
+edam_operations <- dt1[, by = `EDAM operations`, .(N = Name |> unique() |> length())]
+edam_operations <- edam_operations[order(-N)] |> head(4)
+
+dt1$`EDAM operations` <- ifelse(dt1$`EDAM operations` %in% edam_operations$`EDAM operations`, dt1$`EDAM operations`, "Other")
+dt1$`EDAM operations` <- dt1$`EDAM operations` |> factor(c(edam_operations$`EDAM operations`, "Other")) 
+
+dt1$value <- 1
+
+mm <- dt1[, c("Name", "Suite ID", "value"), with = FALSE] |> 
+    unique() |> 
+    dcast(Name ~ `Suite ID`, value.var = "value", fill = 0) |> 
+    as.matrix(rownames = "Name")
+
+hc_y <- mm |> dist() |> hclust(method = "ward.D2")
+hc_x <- mm |> t() |> dist() |> hclust(method = "ward.D2")
+
+
+dt1$Name <- dt1$Name |> factor(levels = hc_y$labels[hc_y$order] |> rev())
+dt1$`Suite ID` <- dt1$`Suite ID` |> factor(levels = hc_x$labels[hc_x$order])
+
+# dt1$Source <- dt1$Source |> factor(levels = c("WorkflowHub", "Public servers"))
+
+gr2 <- dt1 |>
+    ggplot(aes(`Suite ID`, Name)) +
+    geom_tile(color = "white") +
+    
+    scale_x_discrete(expand = c(0, 0)) +
+    scale_y_discrete(expand = c(0, 0)) +
+    
+    # facet_grid(rows = vars(edam_clean), scales = "free", space = "free") +
+    
+    # facet_nested_wrap(vars(`EDAM topic`, `EDAM operation`)) +
+    
+    facet_grid2(
+        rows = vars(cluster),
+        cols = vars(`EDAM operations`),
+        space = "free",
+        scales = "free"
+    ) +
+    
+    coord_cartesian(clip = "off", expand = TRUE) +
+    
+    theme_minimal(base_family = "Calibri") +
+    theme(
+        axis.text.x = element_text(size = 3, angle = 90, hjust = 1, vjust = .5),
+        axis.text.y = element_text(size = 6),
+        
+        axis.title.x = element_text(margin = margin(t = 10)),
+        axis.title.y = element_text(margin = margin(r = 10)),
+        
+        panel.border = element_rect(fill = NA, color = "grey", linewidth = .3),
+        # axis.ticks = element_line(linewidth = .3, color = "grey"),
+        
+        strip.text.x = element_text(face = "bold"),
+        strip.text.y = element_text(face = "bold", angle = 0, hjust = 0),
+        
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(linetype = "dashed", lineend = "round", linewidth = .35),
+        
+        plot.margin = margin(10, 10, 10, 10)
+    ) +
+    
+    labs(y = "Workflows", x = "Galaxy Tool Suites")
+
+```
+
+## Save plots
 
 ```{r}
 outfolder <- "../results/workflows/"
@@ -157,18 +242,33 @@ outfolder <- "../results/workflows/"
 dir.create(outfolder)
 
 ggsave(
-    plot = gr, filename = paste0(outfolder, "/heatmap.png"),
+    plot = gr1, filename = paste0(outfolder, "/heatmap-edam.png"),
     width = 10, height = 10, units = "in", dpi = 600
 )
 
 ggsave(
-    plot = gr, filename = paste0(outfolder, "/heatmap.svg"),
+    plot = gr1, filename = paste0(outfolder, "/heatmap-edam.svg"),
     width = 10, height = 10, units = "in"
 )
 
 ggsave(
-    plot = gr, filename = paste0(outfolder, "/heatmap.pdf"),
+    plot = gr1, filename = paste0(outfolder, "/heatmap-edam.pdf"),
     width = 10, height = 10, units = "in", device = cairo_pdf
+)
+
+ggsave(
+    plot = gr2, filename = paste0(outfolder, "/heatmap-groups.png"),
+    width = 12, height = 10, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = gr2, filename = paste0(outfolder, "/heatmap-groups.svg"),
+    width = 12, height = 10, units = "in"
+)
+
+ggsave(
+    plot = gr2, filename = paste0(outfolder, "/heatmap-groups.pdf"),
+    width = 12, height = 10, units = "in", device = cairo_pdf
 )
 ```
 
