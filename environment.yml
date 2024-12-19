@@ -6,6 +6,10 @@ channels:
 dependencies:
 - jupyter
 - pandas
+- matplotlib
+- pyzotero
+- scholarly
+- fake-useragent
 - r-base
 - r-data.table
 - r-stringr
