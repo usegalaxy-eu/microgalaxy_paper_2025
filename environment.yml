@@ -6,6 +6,7 @@ channels:
 dependencies:
 - jupyter
 - pandas
+- r-base
 - r-data.table
 - r-stringr
 - r-tidyr

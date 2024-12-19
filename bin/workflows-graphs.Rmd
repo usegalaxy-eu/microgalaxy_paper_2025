@@ -153,10 +153,26 @@ gr1 <- dt1 |>
 
 ```{r}
 
-dt1 <- workflows_dt[which(!is.na(`Suite ID`)), c("Name", "Suite ID", "Source", "Projects"), with = FALSE] |> unique()
+dt1 <- workflows_dt[which(!is.na(`Suite ID`)), c("Name", "Suite ID", "Source", "Projects", "EDAM operations"), with = FALSE] |> unique()
 
 dt1$Source   <- ifelse(dt1$Source == "WorkflowHub", "WorkflowHub", "Public servers")
-dt1$Projects <- ifelse(dt1$Projects == "Intergalactic Workflow Commission (IWC)", "Intergalactic Workflow Commission (IWC)", "Other Projects") |> str_wrap(22)
+dt1$Projects <- ifelse(dt1$Projects == "Intergalactic Workflow Commission (IWC)", "IWC", "Other Projects") |> str_wrap(22)
+
+dt1$cluster <- paste0(dt1$Source, "; ", dt1$Projects)
+dt1$cluster <- ifelse(dt1$cluster == "WorkflowHub; IWC", "IWC on WorkflowHub",
+                      ifelse(dt1$cluster == "WorkflowHub; Other Projects", "Other WorkflowHub workflow", "Public server workflows")) |> str_wrap(15)
+
+dt1 <- dt1 |> tidyr::separate_rows("EDAM operations", sep = "\\,") |> setDT()
+
+dt1$`EDAM operations` <- dt1$`EDAM operations` |> str_squish()
+
+
+dt1$`EDAM operations` <- dt1$`EDAM operations` |> str_wrap(15)
+edam_operations <- dt1[, by = `EDAM operations`, .(N = Name |> unique() |> length())]
+edam_operations <- edam_operations[order(-N)] |> head(4)
+
+dt1$`EDAM operations` <- ifelse(dt1$`EDAM operations` %in% edam_operations$`EDAM operations`, dt1$`EDAM operations`, "Other")
+dt1$`EDAM operations` <- dt1$`EDAM operations` |> factor(c(edam_operations$`EDAM operations`, "Other")) 
 
 dt1$value <- 1
 
@@ -172,7 +188,7 @@ hc_x <- mm |> t() |> dist() |> hclust(method = "ward.D2")
 dt1$Name <- dt1$Name |> factor(levels = hc_y$labels[hc_y$order] |> rev())
 dt1$`Suite ID` <- dt1$`Suite ID` |> factor(levels = hc_x$labels[hc_x$order])
 
-dt1$Source <- dt1$Source |> factor(levels = c("WorkflowHub", "Public servers"))
+# dt1$Source <- dt1$Source |> factor(levels = c("WorkflowHub", "Public servers"))
 
 gr2 <- dt1 |>
     ggplot(aes(`Suite ID`, Name)) +
@@ -186,8 +202,8 @@ gr2 <- dt1 |>
     # facet_nested_wrap(vars(`EDAM topic`, `EDAM operation`)) +
     
     facet_grid2(
-        rows = vars(Projects),
-        cols = vars(Source),
+        rows = vars(cluster),
+        cols = vars(`EDAM operations`),
         space = "free",
         scales = "free"
     ) +
@@ -242,17 +258,17 @@ ggsave(
 
 ggsave(
     plot = gr2, filename = paste0(outfolder, "/heatmap-groups.png"),
-    width = 10, height = 10, units = "in", dpi = 600
+    width = 12, height = 10, units = "in", dpi = 600
 )
 
 ggsave(
     plot = gr2, filename = paste0(outfolder, "/heatmap-groups.svg"),
-    width = 10, height = 10, units = "in"
+    width = 12, height = 10, units = "in"
 )
 
 ggsave(
     plot = gr2, filename = paste0(outfolder, "/heatmap-groups.pdf"),
-    width = 10, height = 10, units = "in", device = cairo_pdf
+    width = 12, height = 10, units = "in", device = cairo_pdf
 )
 ```
 
