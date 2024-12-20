@@ -1,0 +1,164 @@
+---
+title: "Citations figure"
+author: "Nikos Pechlivanis"
+date: "2024-12-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load `libraries`
+
+```{r message=FALSE}
+# install.packages("data.table")
+library(data.table)
+# install.packages("stringr")
+library(stringr)
+
+library(tidytext)
+
+# install.packages(c("ggplot2", "ggrepel", "ggtext", "ggh4x"))
+library(ggplot2)
+library(ggrepel)
+library(ggtext)
+library(ggh4x)
+
+library(shadowtext)
+
+# install.packages("extrafont")
+library(extrafont)
+library(packcircles)
+
+library(colorspace)
+
+library(patchwork)
+```
+
+## Input data
+
+```{r}
+years   <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_technical_paper_2024/refs/heads/main/results/citations/years.csv")
+methods <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_technical_paper_2024/refs/heads/main/results/citations/methods.csv")
+target_technical <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_technical_paper_2024/refs/heads/main/results/citations/technical_target.csv")
+target_organisms <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_technical_paper_2024/refs/heads/main/results/citations/targeted_organisms.csv")
+
+years$year <- seq(2005, 2025)
+years <- years |> melt(id.vars = "year", value.factor = FALSE, variable.factor = FALSE)
+years$variable <- years$variable |> str_to_title()
+
+
+methods$cluster          <- "Methods"
+target_organisms$cluster <- "Targetted organisms"
+target_technical$cluster <- "Technical target"
+
+p0 <- rbind(methods, target_organisms, target_technical)
+
+colnames(p0) <- c("variable", "counts", "perc", "cluster")
+
+p0$perc <- p0$perc / 100
+
+```
+
+
+## Barplots 
+
+```{r}
+
+gr1 <- years |>
+    ggplot(aes(year, value)) +
+    geom_col(aes(fill = variable), color = "grey25", linewidth = .15, position = "dodge") +
+    
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 1200), breaks = seq(200, 1000, by = 200)) +
+    
+    scale_fill_manual(values = c("All" = "#4E79A7" |> lighten(.25), "Microbial" = "#E15759" |> darken(.3))) +
+    
+    theme_minimal(base_family = "Calibri") +
+    
+    theme(
+        legend.position = c(.15, .75),
+        legend.title = element_blank(),
+        
+        axis.line = element_line(),
+        axis.ticks = element_line(),
+        
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        
+        panel.grid.minor.y = element_line(linetype = "dotted", lineend = "round"),
+        
+        axis.title.x = element_text(margin = margin(t = 10)),
+        axis.title.y = element_markdown(margin = margin(r = 10))
+    ) +
+    
+    labs(x = "Year", y = "**Number of publications**<br>citing Galaxy papers")
+
+
+gr2 <- p0 |>
+    ggplot(aes(reorder_within(variable, -perc, cluster), perc)) +
+    geom_col(width = .75, fill = "#4E79A7", color = "grey25", linewidth = .25) +
+    
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 0.13), labels = scales::percent, breaks = seq(.01, .12, by = .02)) +
+    scale_x_reordered() +
+    
+    facet_grid2(cols = vars(cluster), space = "free_x", scales = "free_x", axes = "all") +
+    
+    theme_minimal(base_family = "Calibri") +
+    
+    theme(
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        
+        panel.grid.minor.y = element_line(linetype = "dotted", lineend = "round"),
+        
+        axis.line = element_line(),
+        axis.ticks = element_line(),
+        
+        strip.text = element_text(face = "bold"),
+        
+        axis.title.x = element_text(margin = margin(t = 10)),
+        axis.title.y = element_markdown(margin = margin(r = 10))
+    ) +
+    
+    labs(x = "Target", y = "**Percentage in the microbial related papers**<br>citing Galaxy papers")
+
+
+multi <- gr1 / gr2
+
+```
+
+## Save plots
+
+
+```{r}
+outfolder <- "../results/citations/"
+
+dir.create(outfolder, showWarnings = FALSE)
+
+ggsave(
+    plot = multi, filename = paste0(outfolder, "/citations.png"),
+    width = 9, height = 10, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = multi, filename = paste0(outfolder, "/citations.svg"),
+    width = 9, height = 10, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = multi, filename = paste0(outfolder, "/citations.pdf"),
+    width = 9, height = 10, units = "in", device = cairo_pdf
+)
+
+```
+
+
+
+
+
+
+
