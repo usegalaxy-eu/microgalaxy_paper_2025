@@ -90,10 +90,10 @@ gr1 <- years |>
         panel.grid.minor.y = element_line(linetype = "dotted", lineend = "round"),
         
         axis.title.x = element_text(margin = margin(t = 10)),
-        axis.title.y = element_text(margin = margin(r = 10))
+        axis.title.y = element_markdown(margin = margin(r = 10))
     ) +
     
-    labs(x = "Year", y = "No. of publications citing\nGalaxy papers")
+    labs(x = "Year", y = "**Number of publications**<br>citing Galaxy papers")
 
 
 gr2 <- p0 |>
@@ -121,10 +121,10 @@ gr2 <- p0 |>
         strip.text = element_text(face = "bold"),
         
         axis.title.x = element_text(margin = margin(t = 10)),
-        axis.title.y = element_text(margin = margin(r = 10))
+        axis.title.y = element_markdown(margin = margin(r = 10))
     ) +
     
-    labs(x = "Target", y = "Percentage in the microbial related papers\nciting Galaxy papers")
+    labs(x = "Target", y = "**Percentage in the microbial related papers**<br>citing Galaxy papers")
 
 
 multi <- gr1 / gr2
