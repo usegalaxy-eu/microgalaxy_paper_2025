@@ -299,7 +299,8 @@ ggsave(
     width = 16, height = 8, units = "in", device = cairo_pdf
 )
 
-writexl::write_xlsx(dt2, paste0(outfolder, "/workflows-stats.xlsx"))
+# writexl::write_xlsx(dt2, paste0(outfolder, "/workflows-stats.xlsx"))
+fwrite(dt2, paste0(outfolder, "/workflows-stats.tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
 ```
 
 
