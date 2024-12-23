@@ -179,7 +179,7 @@ dt1$cluster <- ifelse(
         dt1$cluster == "WorkflowHub; Other Projects", "Other WorkflowHub workflows", 
         ifelse(
             dt1$cluster == "Public Servers; Other Projects", "Public server workflows", 
-            "Workflows from the GTN project"
+            "Workflows related to GTN tutorials"
         )
     )
 ) |> str_wrap(15)
