@@ -253,6 +253,13 @@ gr2 <- dt1 |>
     
     labs(y = "Workflows", x = "Galaxy Tool Suites")
 
+
+dt2 <- dt1[, by = Name, .("No. of suites" = `Suite ID` |> unique() |> length())]
+
+dt2$`Perc. of suites` <- dt2$`No. of suites` / (dt1$`Suite ID` |> unique() |> length())
+
+dt2 <- dt2[order(-`No. of suites`)]
+
 ```
 
 ## Save plots
@@ -291,6 +298,8 @@ ggsave(
     plot = gr2, filename = paste0(outfolder, "/heatmap-groups.pdf"),
     width = 16, height = 8, units = "in", device = cairo_pdf
 )
+
+writexl::write_xlsx(dt2, paste0(outfolder, "/workflows-stats.xlsx"))
 ```
 
 
