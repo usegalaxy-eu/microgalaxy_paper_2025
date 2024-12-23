@@ -39,7 +39,7 @@ library(packcircles)
 ## THERE IS A BUG UNFORTUNATELY WITH fread FUNCTION
 ## RUN ON CONSOLE IN THIS CASE
 
-workflows_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/workflows.tsv"
+workflows_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/curated_workflows.tsv"
 all_tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/all/resources/tools.tsv"
 
 workflows_dt <- workflows_url |> fread(sep = "\t")
@@ -155,19 +155,40 @@ gr1 <- dt1 |>
 
 dt1 <- workflows_dt[which(!is.na(`Suite ID`)), c("Name", "Suite ID", "Source", "Projects", "EDAM operations"), with = FALSE] |> unique()
 
-dt1$Source   <- ifelse(dt1$Source == "WorkflowHub", "WorkflowHub", "Public servers")
-dt1$Projects <- ifelse(dt1$Projects == "Intergalactic Workflow Commission (IWC)", "IWC", "Other Projects") |> str_wrap(22)
+dt1$Source   <- ifelse(
+    dt1$Source == "WorkflowHub", "WorkflowHub", 
+    ifelse(
+        dt1$Source == "dev.WorkflowHub", "GTN", 
+        "Public Servers"
+    )
+)
+
+dt1$Projects <- ifelse(
+    dt1$Projects == "Intergalactic Workflow Commission (IWC)", "IWC",
+    ifelse(
+        dt1$Projects == "Galaxy Training Network", "GTN", 
+        "Other Projects"
+    )
+) |> str_wrap(22)
 
 dt1$cluster <- paste0(dt1$Source, "; ", dt1$Projects)
-dt1$cluster <- ifelse(dt1$cluster == "WorkflowHub; IWC", "IWC on WorkflowHub",
-                      ifelse(dt1$cluster == "WorkflowHub; Other Projects", "Other WorkflowHub workflow", "Public server workflows")) |> str_wrap(15)
+
+dt1$cluster <- ifelse(
+    dt1$cluster == "WorkflowHub; IWC", "IWC on WorkflowHub",
+    ifelse(
+        dt1$cluster == "WorkflowHub; Other Projects", "Other WorkflowHub workflows", 
+        ifelse(
+            dt1$cluster == "Public Servers; Other Projects", "Public server workflows", 
+            "Workflows related to GTN tutorials"
+        )
+    )
+) |> str_wrap(15)
 
 dt1 <- dt1 |> tidyr::separate_rows("EDAM operations", sep = "\\,") |> setDT()
 
 dt1$`EDAM operations` <- dt1$`EDAM operations` |> str_squish()
+dt1$`EDAM operations` <- dt1$`EDAM operations` |> str_wrap(15) |> str_replace("DNA barcoding", "DNA\nbarcoding")
 
-
-dt1$`EDAM operations` <- dt1$`EDAM operations` |> str_wrap(15)
 edam_operations <- dt1[, by = `EDAM operations`, .(N = Name |> unique() |> length())]
 edam_operations <- edam_operations[order(-N)] |> head(4)
 
@@ -232,6 +253,13 @@ gr2 <- dt1 |>
     
     labs(y = "Workflows", x = "Galaxy Tool Suites")
 
+
+dt2 <- dt1[, by = Name, .("No. of suites" = `Suite ID` |> unique() |> length())]
+
+dt2$`Perc. of suites` <- dt2$`No. of suites` / (dt1$`Suite ID` |> unique() |> length())
+
+dt2 <- dt2[order(-`No. of suites`)]
+
 ```
 
 ## Save plots
@@ -258,18 +286,21 @@ ggsave(
 
 ggsave(
     plot = gr2, filename = paste0(outfolder, "/heatmap-groups.png"),
-    width = 12, height = 10, units = "in", dpi = 600
+    width = 16, height = 8, units = "in", dpi = 600
 )
 
 ggsave(
     plot = gr2, filename = paste0(outfolder, "/heatmap-groups.svg"),
-    width = 12, height = 10, units = "in"
+    width = 16, height = 8, units = "in"
 )
 
 ggsave(
     plot = gr2, filename = paste0(outfolder, "/heatmap-groups.pdf"),
-    width = 12, height = 10, units = "in", device = cairo_pdf
+    width = 16, height = 8, units = "in", device = cairo_pdf
 )
+
+# writexl::write_xlsx(dt2, paste0(outfolder, "/workflows-stats.xlsx"))
+fwrite(dt2, paste0(outfolder, "/workflows-stats.tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
 ```
 
 
