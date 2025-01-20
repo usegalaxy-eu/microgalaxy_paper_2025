@@ -81,8 +81,8 @@ gr1 <- years |>
         legend.position = c(.15, .75),
         legend.title = element_blank(),
         
-        axis.line = element_line(),
-        axis.ticks = element_line(),
+        axis.line = element_line(lineend = "round"),
+        axis.ticks = element_line(lineend = "round"),
         
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
@@ -98,7 +98,7 @@ gr1 <- years |>
 
 gr2 <- p0 |>
     ggplot(aes(reorder_within(variable, -perc, cluster), perc)) +
-    geom_col(width = .75, fill = "#4E79A7", color = "grey25", linewidth = .25) +
+    geom_col(width = .75, fill = "#4E79A7" |> lighten(.25), color = "grey25", linewidth = .15) +
     
     scale_y_continuous(expand = c(0, 0), limits = c(0, 0.13), labels = scales::percent, breaks = seq(.01, .12, by = .02)) +
     scale_x_reordered() +
@@ -115,8 +115,8 @@ gr2 <- p0 |>
         
         panel.grid.minor.y = element_line(linetype = "dotted", lineend = "round"),
         
-        axis.line = element_line(),
-        axis.ticks = element_line(),
+        axis.line = element_line(lineend = "round"),
+        axis.ticks = element_line(lineend = "round"),
         
         strip.text = element_text(face = "bold"),
         
@@ -127,7 +127,11 @@ gr2 <- p0 |>
     labs(x = "Target", y = "**Percentage in the microbial related papers**<br>citing Galaxy papers")
 
 
-multi <- gr1 / gr2
+multi <- (gr1 / gr2) + 
+    plot_annotation(tag_levels = "A") &
+    theme(
+        plot.tag = element_text(size = 14, face = "bold", family = "Calibri")
+    )
 
 ```
 

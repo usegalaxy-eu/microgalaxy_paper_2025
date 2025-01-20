@@ -19,7 +19,7 @@ library(stringr)
 ## Input data 
 
 ```{r}
-df <- "data/modified_answers.csv" |> fread()
+df <- "https://raw.githubusercontent.com/paulzierep/microgalaxy-survey/refs/heads/main/data/modified_answers.csv" |> fread()
 ```
 
 ### Correct column names 
@@ -28,16 +28,20 @@ df <- "data/modified_answers.csv" |> fread()
 df$V1 <- NULL
 
 df$Timestamp <- df$Timestamp |> str_split_i("\\ ", 1) |> lubridate::as_date(format = "%d/%m/%Y")
+
+df$`Which country are you based in?` <- df$`Which country are you based in?` |>
+    str_to_title() |>
+    str_split_i("\\,", 1) |>
+    str_squish() |>
+    str_replace("Bazil", "Brazil") |>
+    str_replace("Hunagry", "Hungary") |>
+    str_replace("England", "United Kingdom")
 ```
 
 ### Add continent 
 
 ```{r}
-df$Continent <- df$`Which country are you based in?` |> 
-    str_to_title() |> 
-    str_split_i("\\,", 1) |> 
-    str_squish() |>
-    countrycode::countrycode(origin = "country.name", destination = "continent")
+df$Continent <- df$`Which country are you based in?` |> countrycode::countrycode(origin = "country.name", destination = "continent")
 ```
 
 ### Columns of interest 
@@ -229,22 +233,43 @@ df_plot$question2 <- df_plot$question2 |> factor(levels = df_plot$question2 |> u
 gr <- df_plot |>
     ggplot(aes(x = N, y = reorder_within(ylabel, N, question2))) +
     
-    geom_col(width = .75, aes(fill = Prop), lineend = "round") +
-    geom_point(size = 4.6, aes(color = Prop)) +
+    geom_point(size = 4.65, aes(fill = Prop), shape = 21, stroke = .25, color = "grey25") +
+    geom_col(width = .75, aes(fill = Prop), lineend = "round", color = "grey25", linewidth = .15) +
+    geom_point(size = 4.31, aes(fill = Prop, color = Prop), shape = 21, stroke = .25) +
+    
     
     geom_shadowtext(aes(label = label), size = 3, hjust = 0, vjust = .5, position = position_nudge(x = 4.5),
                     bg.r = .05, bg.color = "white", color = "black") +
 
     scale_y_reordered() +
-    scale_x_continuous(expand = c(0, 0), limits = c(0, 123), breaks = c(10, 25, 50, 75, 100), minor_breaks = c(17.5, 37.5, 62.5, 87.5, 112.5)) +
+    scale_x_continuous(expand = c(0, 0), 
+                       limits = c(0, 123), 
+                       breaks = c(10, 25, 50, 75, 100), 
+                       minor_breaks = c(17.5, 37.5, 62.5, 87.5, 112.5)) +
+    
     facet_grid2(vars(question2), scales = "free_y", space = "free_y") +
     
-    scale_fill_gradient(low = "#00429d", high = "#93003a") +
-    scale_color_gradient(low = "#00429d", high = "#93003a") +
+    scale_fill_stepsn(colors = paletteer_c("ggthemes::Red-Blue Diverging", 5, direction = -1),
+                      breaks = c(.2, .4, .6, .8),
+                      limits = c(0, 1),
+                      labels = scales::percent,
+                      guide = guide_colorsteps(barwidth = unit(12, "lines"), 
+                                               barheight = unit(.5, "lines"))) +
+    
+    scale_color_stepsn(colors = paletteer_c("ggthemes::Red-Blue Diverging", 5, direction = -1),
+                       breaks = c(.2, .4, .6, .8),
+                       limits = c(0, 1),
+                       guide = "none") +
+    
+    # scale_fill_gradient(low = "#4E79A7" |> lighten(.25), high = "#E15759" |> darken(.3)) +
+    # scale_color_gradient(low = "#4E79A7" |> lighten(.25), high = "#E15759" |> darken(.3)) +
     
     theme_minimal() +
     theme(
-        legend.position = "none",
+        # legend.position.inside = TRUE,
+        legend.position = "bottom",
+        legend.title.position = "top",
+        legend.title = element_text(family = "Calibri"),
         
         strip.clip = "off",
         strip.text.y.right = element_text(face = "bold", angle=0, vjust=.5, hjust = 0),
@@ -254,15 +279,19 @@ gr <- df_plot |>
         axis.title.x = element_text(margin = margin(t = 5)),
         
         panel.grid.major.y = element_blank(),
-        panel.grid.minor.x = element_line(linetype = "dashed", lineend = "round", color = "grey85"),
-        panel.grid.major.x = element_line(color = "grey85", linewidth = .4),
+        
+        panel.grid.minor.x = element_line(color = "grey85", linetype = "dotted", lineend = "round"),
+        panel.grid.major.x = element_line(color = "grey85"),
         
         panel.background = element_rect(fill = NA, color = "grey85"),
+        
+        axis.line = element_line(lineend = "round"),
+        axis.ticks = element_line(lineend = "round"),
         
         plot.margin = margin(20, 20, 20, 20)
     ) +
     
-    labs(x = "Number of Responses")
+    labs(x = "Number of Responses", fill = "Proportion")
 ```
 
 ### Output files
@@ -270,9 +299,13 @@ gr <- df_plot |>
 ```{r}
 # dir.create("survey-figure", showWarnings = FALSE)
 
-ggsave(plot = gr, filename = "results/figures/survey-results.png", width = 9, height = 10, units = "in", dpi = 600)
-ggsave(plot = gr, filename = "results/figures/survey-results.pdf", width = 9, height = 10, units = "in", device = cairo_pdf)
-ggsave(plot = gr, filename = "results/figures/survey-results.svg", width = 9, height = 10, units = "in")
+outfolder <- "../results/survey"
+
+dir.create(outfolder, showWarnings = FALSE)
+
+ggsave(plot = gr, filename = paste0(outfolder, "/survey-results.png"), width = 9, height = 10, units = "in", dpi = 600)
+ggsave(plot = gr, filename = paste0(outfolder, "/survey-results.pdf"), width = 9, height = 10, units = "in", device = cairo_pdf)
+ggsave(plot = gr, filename = paste0(outfolder, "/survey-results.svg"), width = 9, height = 10, units = "in")
 ```
 
 
