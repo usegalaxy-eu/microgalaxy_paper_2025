@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Load `libraries`
+## Load `libraries` 
 
 ```{r message=FALSE}
 # install.packages("data.table")
@@ -30,7 +30,7 @@ library(paletteer)
 library(colorspace)
 ```
 
-## Load input dataset
+## Load input dataset 
 
 ```{r loaddata, include = FALSE}
 
@@ -43,7 +43,7 @@ tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/
 tools_dt <- tools_url |> fread()
 ```
 
-## Tool Availability graph: Heatmap
+## Tool Availability graph: Heatmap 
 
 ### Extract availability information
 
@@ -203,36 +203,37 @@ dir.create(outfolder)
 
 ggsave(
     plot = c_1, filename = paste0(outfolder, "/heatmap-1.png"),
-    width = 18, height = 5, units = "in", dpi = 600
+    width = 5, height = 18, units = "in", dpi = 600
 )
 
 ggsave(
     plot = c_1, filename = paste0(outfolder, "/heatmap-1.svg"),
-    width = 18, height = 5, units = "in"
+    width = 5, height = 18, units = "in"
 )
 
 ggsave(
     plot = c_1, filename = paste0(outfolder, "/heatmap-1.pdf"),
-    width = 18, height = 5, units = "in", device = cairo_pdf
+    width = 5, height = 18, units = "in", device = cairo_pdf
 )
 
 ggsave(
     plot = c_2, filename = paste0(outfolder, "/heatmap-2.png"),
-    width = 15, height = 5, units = "in", dpi = 600
+    width = 5, height = 18, units = "in", dpi = 600
 )
 
 ggsave(
     plot = c_2, filename = paste0(outfolder, "/heatmap-2.svg"),
-    width = 15, height = 5, units = "in"
+    width = 5, height = 18, units = "in"
 )
 
 ggsave(
     plot = c_2, filename = paste0(outfolder, "/heatmap-2.pdf"),
-    width = 15, height = 5, units = "in", device = cairo_pdf
+    width = 5, height = 18, units = "in", device = cairo_pdf
 )
 ```
 
-## EDAM operation: Scatter plot
+
+## EDAM operation: Scatter plot 
 
 ### Split EDAM operation per tool
 
@@ -278,7 +279,6 @@ df2 <- df2[, by = `Suite ID`, head(.SD, 1)]
 ```{r}
 df2 = df2[, c("Suite ID", "runs", "users", "EDAM reduced operations")] |> unique()
 ```
-
 
 ### Define factor levels of cluster column
 
@@ -445,6 +445,7 @@ a <- df2 |>
 ```
 
 ### Save plot
+
 ```{r}
 
 outfolder <- paste0("../results/tools/", xvar |> str_remove_all("Suite|runs|\\*|\\(|\\)") |> str_squish())
@@ -453,7 +454,7 @@ dir.create(outfolder)
 
 ggsave(
     plot = a, filename = paste0(outfolder, "/tools-scatter-plot.png"),
-    width = 10, height = 8, units = "in", dpi = 600
+    width = 12, height = 9, units = "in", dpi = 600
 )
 
 ggsave(
@@ -468,7 +469,7 @@ ggsave(
 
 ```
 
-## ARCHIVED EDAM topic: Faceted scatter plot
+## ARCHIVED EDAM topic: Faceted scatter plot 
 
 ```{r}
 # # split EADM topics per tool ------------------------
@@ -604,7 +605,8 @@ ggsave(
 
 ```
 
-## No. of Tool Suites over time
+
+## No. of Tool Suites over time 
 
 ```{r}
 d1 <- tools_dt[order(`Suite first commit date`)]
@@ -641,7 +643,32 @@ d1_p <- d1 |>
     labs(y = "Cumulative number of tools")
 ```
 
-### Patchwork
+### Save plot
+
+```{r}
+
+outfolder <- "../results/tools/number of tools"
+
+dir.create(outfolder)
+
+ggsave(
+    plot = d1_p, filename = paste0(outfolder, "/ntools.png"),
+    width = 9, height = 8, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = d1_p, filename = paste0(outfolder, "/ntools.svg"),
+    width = 9, height = 8, units = "in"
+)
+
+ggsave(
+    plot = d1_p, filename = paste0(outfolder, "/ntools.pdf"),
+    width = 9, height = 8, units = "in", device = cairo_pdf
+)
+```
+
+
+## Patchwork 
 
 ```{r}
 
@@ -672,129 +699,5 @@ ggsave(
     plot = multi, filename = paste0(outfolder, "/figure.svg"),
     width = 14, height = 14, units = "in"
 )
-
-```
-
-### Save plot
-
-```{r}
-
-outfolder <- "../results/tools/number of tools"
-
-dir.create(outfolder)
-
-ggsave(
-    plot = d1_p, filename = paste0(outfolder, "/ntools.png"),
-    width = 9, height = 8, units = "in", dpi = 600
-)
-
-ggsave(
-    plot = d1_p, filename = paste0(outfolder, "/ntools.svg"),
-    width = 9, height = 8, units = "in"
-)
-
-ggsave(
-    plot = d1_p, filename = paste0(outfolder, "/ntools.pdf"),
-    width = 9, height = 8, units = "in", device = cairo_pdf
-)
-```
-
-## ARCHIVED Saving graphs
-
-```{r}
-# 
-# dir.create("../results/tools", showWarnings = FALSE)
-# 
-# # 1 ---------------
-# 
-# ggsave(
-#     plot = a, filename = "../results/tools/edam-operations.png",
-#     width = 12, height = 9, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = a, filename = "../results/tools/edam-operations.svg",
-#     width = 12, height = 9, units = "in"
-# )
-# 
-# ggsave(
-#     plot = a, filename = "../results/tools/edam-operations.pdf",
-#     width = 12, height = 9, units = "in", device = cairo_pdf
-# )
-# 
-# 
-# # ggsave(
-# #     plot = a1, filename = "../results/tools/edam-operations-1.png",
-# #     width = 12, height = 10, units = "in", dpi = 600
-# # )
-# # 
-# # ggsave(
-# #     plot = a1, filename = "../results/tools/edam-operations-1.pdf",
-# #     width = 12, height = 10, units = "in", device = cairo_pdf
-# # )
-# 
-# # 2 ---------------
-# 
-# ggsave(
-#     plot = b, filename = "../results/tools/edam-topics.png",
-#     width = 12, height = 9, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = b, filename = "../results/tools/edam-topics.svg",
-#     width = 12, height = 9, units = "in"
-# )
-# 
-# ggsave(
-#     plot = b, filename = "../results/tools/edam-topics.pdf",
-#     width = 12, height = 9, units = "in", device = cairo_pdf
-# )
-# 
-# # 3 ---------------
-# 
-# ggsave(
-#     plot = c_1, filename = "../results/tools/availability-1.png",
-#     width = 15, height = 5, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = c_1, filename = "../results/tools/availability-1.svg",
-#     width = 15, height = 5, units = "in"
-# )
-# 
-# ggsave(
-#     plot = c_1, filename = "../results/tools/availability-1.pdf",
-#     width = 15, height = 5, units = "in", device = cairo_pdf
-# )
-# 
-# ggsave(
-#     plot = c_2, filename = "../results/tools/availability-2.png",
-#     width = 16, height = 5, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = c_2, filename = "../results/tools/availability-2.svg",
-#     width = 16, height = 5, units = "in"
-# )
-# 
-# ggsave(
-#     plot = c_2, filename = "../results/tools/availability-2.pdf",
-#     width = 16, height = 5, units = "in", device = cairo_pdf
-# )
-# 
-# ggsave(
-#     plot = d1_p, filename = "../results/tools/ntools.png",
-#     width = 9, height = 8, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = d1_p, filename = "../results/tools/ntools.svg",
-#     width = 9, height = 8, units = "in"
-# )
-# 
-# ggsave(
-#     plot = d1_p, filename = "../results/tools/ntools.pdf",
-#     width = 9, height = 8, units = "in", device = cairo_pdf
-# )
 
 ```

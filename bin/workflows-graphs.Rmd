@@ -98,8 +98,8 @@ mm <- dt1[, c("Name", "Suite ID", "value"), with = FALSE] |>
     dcast(Name ~ `Suite ID`, value.var = "value", fill = 0) |> 
     as.matrix(rownames = "Name")
 
-hc_y <- mm |> dist() |> hclust(method = "ward.D2")
-hc_x <- mm |> t() |> dist() |> hclust(method = "ward.D2")
+hc_y <- mm |> dist(method = "binary") |> hclust(method = "ward.D2")
+hc_x <- mm |> t() |> dist(method = "binary") |> hclust(method = "ward.D2")
 
 
 dt1$Name <- dt1$Name |> factor(levels = hc_y$labels[hc_y$order])
@@ -127,13 +127,13 @@ gr1 <- dt1 |>
     
     theme_minimal(base_family = "Calibri") +
     theme(
-        axis.text.x = element_text(size = 1, angle = 90, hjust = 1, vjust = .5),
+        axis.text.x = element_text(size = 2.5, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 6),
         
         axis.title.x = element_text(margin = margin(t = 10)),
         axis.title.y = element_text(margin = margin(r = 10)),
         
-        panel.border = element_rect(fill = NA, color = "grey", linewidth = .3),
+        panel.border = element_rect(fill = NA, color = "grey", linewidth = .15),
         # axis.ticks = element_line(linewidth = .3, color = "grey"),
         
         strip.text.x = element_text(face = "bold"),
@@ -202,8 +202,8 @@ mm <- dt1[, c("Name", "Suite ID", "value"), with = FALSE] |>
     dcast(Name ~ `Suite ID`, value.var = "value", fill = 0) |> 
     as.matrix(rownames = "Name")
 
-hc_y <- mm |> dist() |> hclust(method = "ward.D2")
-hc_x <- mm |> t() |> dist() |> hclust(method = "ward.D2")
+hc_y <- mm |> dist(method = "binary") |> hclust(method = "ward.D2")
+hc_x <- mm |> t() |> dist(method = "binary") |> hclust(method = "ward.D2")
 
 
 dt1$Name <- dt1$Name |> factor(levels = hc_y$labels[hc_y$order] |> rev())
@@ -233,7 +233,7 @@ gr2 <- dt1 |>
     
     theme_minimal(base_family = "Calibri") +
     theme(
-        axis.text.x = element_text(size = 3, angle = 90, hjust = 1, vjust = .5),
+        axis.text.x = element_text(size = 2.5, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 6),
         
         axis.title.x = element_text(margin = margin(t = 10)),
@@ -246,7 +246,7 @@ gr2 <- dt1 |>
         strip.text.y = element_text(face = "bold", angle = 0, hjust = 0),
         
         panel.grid.minor = element_blank(),
-        panel.grid.major = element_line(linetype = "dashed", lineend = "round", linewidth = .35),
+        panel.grid.major = element_line(linetype = "dashed", lineend = "round", linewidth = .15),
         
         plot.margin = margin(10, 10, 10, 10)
     ) +
@@ -271,17 +271,17 @@ dir.create(outfolder)
 
 ggsave(
     plot = gr1, filename = paste0(outfolder, "/heatmap-edam.png"),
-    width = 10, height = 10, units = "in", dpi = 600
+    width = 16, height = 12, units = "in", dpi = 600
 )
 
 ggsave(
     plot = gr1, filename = paste0(outfolder, "/heatmap-edam.svg"),
-    width = 10, height = 10, units = "in"
+    width = 16, height = 12, units = "in"
 )
 
 ggsave(
     plot = gr1, filename = paste0(outfolder, "/heatmap-edam.pdf"),
-    width = 10, height = 10, units = "in", device = cairo_pdf
+    width = 16, height = 12, units = "in", device = cairo_pdf
 )
 
 ggsave(
