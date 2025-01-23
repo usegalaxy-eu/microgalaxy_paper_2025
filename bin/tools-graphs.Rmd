@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Load `libraries`
+## Load `libraries` 
 
 ```{r message=FALSE}
 # install.packages("data.table")
@@ -30,7 +30,7 @@ library(paletteer)
 library(colorspace)
 ```
 
-## Load input dataset
+## Load input dataset 
 
 ```{r loaddata, include = FALSE}
 
@@ -43,7 +43,7 @@ tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/
 tools_dt <- tools_url |> fread()
 ```
 
-## Tool Availability graph: Heatmap
+## Tool Availability graph: Heatmap 
 
 ### Extract availability information
 
@@ -108,20 +108,21 @@ p2$edam_clean <- p2$edam_clean |> factor(levels = c(t$`EDAM reduced topics`, "Ot
 ```{r}
 c_1 <- p2[which(edam_clean != "Other")] |> 
     
-    ggplot(aes(`Suite ID`, variable)) + 
+    ggplot(aes(variable, `Suite ID`)) + 
     
     geom_tile(aes(fill = value), color = "grey") + 
     
     scale_fill_stepsn(
         colors = c('#00429d', '#5681b9', '#93c4d2', '#ffffe0', '#ffa59e', '#dd4c65', '#93003a'),
-        guide = guide_colorsteps(barwidth = unit(12, "lines"), barheight = unit(.5, "lines")),
+        guide = guide_colorsteps(barwidth = unit(14, "lines"), barheight = unit(.35, "lines")),
         breaks = c(2, 4, 8, 16, 32, 64, 128),
         transform = "log2"
     ) +
     
-    facet_grid(rows = vars(fct), cols = vars(edam_clean), scales = "free", space = "free") +
+    facet_grid(cols = vars(fct), rows = vars(edam_clean), scales = "free", space = "free") +
     
     scale_y_discrete(expand = c(0, 0)) +
+    scale_x_discrete(expand = c(0, 0)) +
     
     theme_minimal(base_family = "Calibri") +
     
@@ -129,22 +130,24 @@ c_1 <- p2[which(edam_clean != "Other")] |>
         legend.position = "bottom",
         legend.title.position = "top",
         
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 6),
         
-        axis.title.y = element_markdown(),
+        axis.title.x = element_markdown(),
         
-        panel.border = element_rect(fill = NA, color = "grey10"),
+        panel.border = element_rect(fill = NA, color = "grey25"),
+        axis.ticks.x = element_line(lineend = "round", color = "grey25"),
         
-        strip.text.y = element_blank(),
-        strip.text.x = element_text(face = "bold"),
+        strip.text.x = element_blank(),
+        strip.text.y = element_text(face = "bold", angle = 0, hjust = 0),
         
         panel.grid.minor = element_blank(),
-        panel.grid.major = element_line(linetype = "dashed", lineend = "round", linewidth = .35),
+        panel.grid.major = element_line(linetype = "dashed", lineend = "round", linewidth = .25),
         
         plot.margin = margin(10, 10, 10, 10)
     ) +
     
-    labs(x = "Galaxy Tool Suites", y = "Availability of Tool Suites Across **Servers**", fill = "No. of Tools")
+    labs(y = "Galaxy Tool Suites", x = "Availability of Tool Suites Across **Servers**", fill = "No. of Tools")
 ```
 
 ### All Tools suties
@@ -184,9 +187,7 @@ c_2 <- p |>
         strip.text.x = element_text(face = "bold", angle = 90, hjust = 0),
         
         panel.grid.minor = element_blank(),
-        panel.grid.major = element_line(linetype = "dashed", lineend = "round", linewidth = .35),
-        
-        plot.margin = margin(10, 10, 10, 10)
+        panel.grid.major = element_line(linetype = "dashed", lineend = "round", linewidth = .35)
     ) +
     
     labs(x = "Galaxy Tool Suites", y = "Availability of Tool Suites Across **Servers**", fill = "No. of Tools")
@@ -202,36 +203,37 @@ dir.create(outfolder)
 
 ggsave(
     plot = c_1, filename = paste0(outfolder, "/heatmap-1.png"),
-    width = 18, height = 5, units = "in", dpi = 600
+    width = 5, height = 18, units = "in", dpi = 600
 )
 
 ggsave(
     plot = c_1, filename = paste0(outfolder, "/heatmap-1.svg"),
-    width = 18, height = 5, units = "in"
+    width = 5, height = 18, units = "in"
 )
 
 ggsave(
     plot = c_1, filename = paste0(outfolder, "/heatmap-1.pdf"),
-    width = 18, height = 5, units = "in", device = cairo_pdf
+    width = 5, height = 18, units = "in", device = cairo_pdf
 )
 
 ggsave(
     plot = c_2, filename = paste0(outfolder, "/heatmap-2.png"),
-    width = 15, height = 5, units = "in", dpi = 600
+    width = 5, height = 18, units = "in", dpi = 600
 )
 
 ggsave(
     plot = c_2, filename = paste0(outfolder, "/heatmap-2.svg"),
-    width = 15, height = 5, units = "in"
+    width = 5, height = 18, units = "in"
 )
 
 ggsave(
     plot = c_2, filename = paste0(outfolder, "/heatmap-2.pdf"),
-    width = 15, height = 5, units = "in", device = cairo_pdf
+    width = 5, height = 18, units = "in", device = cairo_pdf
 )
 ```
 
-## EDAM operation: Scatter plot
+
+## EDAM operation: Scatter plot 
 
 ### Split EDAM operation per tool
 
@@ -278,11 +280,10 @@ df2 <- df2[, by = `Suite ID`, head(.SD, 1)]
 df2 = df2[, c("Suite ID", "runs", "users", "EDAM reduced operations")] |> unique()
 ```
 
-
 ### Define factor levels of cluster column
 
 ```{r}
-st <- st[1:25]
+st <- st[1:9]
 
 df2$cluster <- ifelse(df2$`EDAM reduced operations` %in% st$`EDAM reduced operations`, df2$`EDAM reduced operations` |> as.character(), "Other")
 df2$cluster <- df2$cluster |> factor(levels = c(st$`EDAM reduced operations`, "Other"))
@@ -338,7 +339,7 @@ a <- df2 |>
         breaks = c(.1, 1, 10, 100, 1000, 10000)
     ) +
     
-    scale_fill_manual(values = c(paletteer_d("ggsci::default_igv", ncolors - 1), "grey") |> lighten(.25), guide = guide_legend(ncol = 1, override.aes = list(size = 2.5))) +
+    scale_fill_manual(values = c(paletteer_d("ggsci::default_igv", ncolors - 1), "grey") |> lighten(.25), guide = guide_legend(nrow = 3, override.aes = list(size = 2.5))) +
     scale_color_manual(values = c(paletteer_d("ggsci::default_igv", ncolors - 1), "grey") |> darken(.25), guide = "none") +
     
     coord_cartesian() +
@@ -346,7 +347,7 @@ a <- df2 |>
     theme_minimal(base_family = "Calibri") +
     
     theme(
-        legend.position = "right",
+        legend.position = "bottom",
         legend.title.position = "top",
         legend.justification = "left",
         
@@ -355,12 +356,13 @@ a <- df2 |>
         axis.title.x = element_markdown(margin = margin(t = 10)),
         axis.title.y = element_markdown(margin = margin(r = 10)),
         
-        axis.ticks = element_line(linewidth = .3),
+        # axis.ticks = element_line(linewidth = .3),
         panel.grid.major = element_line(linewidth = .3, linetype = "dashed", lineend = "round", color = "grey75"),
         
-        panel.border = element_rect(linewidth = .3, fill = NA),
+        # panel.border = element_rect(linewidth = .3, fill = NA),
         
-        plot.margin = margin(20, 20, 20, 20)
+        axis.line = element_line(lineend = "round"),
+        axis.ticks = element_line(lineend = "round")
     ) +
     
     labs(x = xvar, y = yvar, fill = "EDAM operation")
@@ -443,6 +445,7 @@ a <- df2 |>
 ```
 
 ### Save plot
+
 ```{r}
 
 outfolder <- paste0("../results/tools/", xvar |> str_remove_all("Suite|runs|\\*|\\(|\\)") |> str_squish())
@@ -451,7 +454,7 @@ dir.create(outfolder)
 
 ggsave(
     plot = a, filename = paste0(outfolder, "/tools-scatter-plot.png"),
-    width = 10, height = 8, units = "in", dpi = 600
+    width = 12, height = 9, units = "in", dpi = 600
 )
 
 ggsave(
@@ -466,7 +469,7 @@ ggsave(
 
 ```
 
-## ARCHIVED EDAM topic: Faceted scatter plot
+## ARCHIVED EDAM topic: Faceted scatter plot 
 
 ```{r}
 # # split EADM topics per tool ------------------------
@@ -602,7 +605,8 @@ ggsave(
 
 ```
 
-## No. of Tool Suites over time
+
+## No. of Tool Suites over time 
 
 ```{r}
 d1 <- tools_dt[order(`Suite first commit date`)]
@@ -617,7 +621,7 @@ d2$year <- paste0(d2$year, "-01-01") |> lubridate::as_date()
 
 d1_p <- d1 |>
     ggplot(aes(`Suite first commit date`, ypos)) +
-    geom_line(linewidth = .25, color = "#3C3C3C") +
+    geom_line(linewidth = .45, color = "#3C3C3C") +
     geom_area(alpha = .25) +
     
     # geom_point(data = d2, aes(year, N)) +
@@ -625,13 +629,16 @@ d1_p <- d1 |>
     scale_y_continuous(expand = c(0, 0), breaks = seq(50, 300, by = 50), limits = c(0, 235))+
     theme_minimal(base_family = "Calibri") +
     theme(
-        panel.grid.major = element_line(linewidth = .45, color = "grey85"),
-        panel.grid.minor = element_line(linewidth = .35),
+        # panel.grid.major = element_line(linewidth = .45, color = "grey85"),
+        # panel.grid.minor = element_line(linewidth = .35),
+        
+        panel.grid.major = element_line(linewidth = .3, linetype = "dashed", lineend = "round", color = "grey75"),
         
         axis.title.x = element_markdown(margin = margin(t = 10)),
         axis.title.y = element_markdown(margin = margin(r = 10)),
         
-        plot.margin = margin(20, 20, 20, 20)
+        axis.line = element_line(lineend = "round"),
+        axis.ticks = element_line(lineend = "round")
     ) +
     labs(y = "Cumulative number of tools")
 ```
@@ -660,102 +667,37 @@ ggsave(
 )
 ```
 
-## ARCHIVED Saving graphs
+
+## Patchwork 
 
 ```{r}
-# 
-# dir.create("../results/tools", showWarnings = FALSE)
-# 
-# # 1 ---------------
-# 
-# ggsave(
-#     plot = a, filename = "../results/tools/edam-operations.png",
-#     width = 12, height = 9, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = a, filename = "../results/tools/edam-operations.svg",
-#     width = 12, height = 9, units = "in"
-# )
-# 
-# ggsave(
-#     plot = a, filename = "../results/tools/edam-operations.pdf",
-#     width = 12, height = 9, units = "in", device = cairo_pdf
-# )
-# 
-# 
-# # ggsave(
-# #     plot = a1, filename = "../results/tools/edam-operations-1.png",
-# #     width = 12, height = 10, units = "in", dpi = 600
-# # )
-# # 
-# # ggsave(
-# #     plot = a1, filename = "../results/tools/edam-operations-1.pdf",
-# #     width = 12, height = 10, units = "in", device = cairo_pdf
-# # )
-# 
-# # 2 ---------------
-# 
-# ggsave(
-#     plot = b, filename = "../results/tools/edam-topics.png",
-#     width = 12, height = 9, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = b, filename = "../results/tools/edam-topics.svg",
-#     width = 12, height = 9, units = "in"
-# )
-# 
-# ggsave(
-#     plot = b, filename = "../results/tools/edam-topics.pdf",
-#     width = 12, height = 9, units = "in", device = cairo_pdf
-# )
-# 
-# # 3 ---------------
-# 
-# ggsave(
-#     plot = c_1, filename = "../results/tools/availability-1.png",
-#     width = 15, height = 5, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = c_1, filename = "../results/tools/availability-1.svg",
-#     width = 15, height = 5, units = "in"
-# )
-# 
-# ggsave(
-#     plot = c_1, filename = "../results/tools/availability-1.pdf",
-#     width = 15, height = 5, units = "in", device = cairo_pdf
-# )
-# 
-# ggsave(
-#     plot = c_2, filename = "../results/tools/availability-2.png",
-#     width = 16, height = 5, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = c_2, filename = "../results/tools/availability-2.svg",
-#     width = 16, height = 5, units = "in"
-# )
-# 
-# ggsave(
-#     plot = c_2, filename = "../results/tools/availability-2.pdf",
-#     width = 16, height = 5, units = "in", device = cairo_pdf
-# )
-# 
-# ggsave(
-#     plot = d1_p, filename = "../results/tools/ntools.png",
-#     width = 9, height = 8, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = d1_p, filename = "../results/tools/ntools.svg",
-#     width = 9, height = 8, units = "in"
-# )
-# 
-# ggsave(
-#     plot = d1_p, filename = "../results/tools/ntools.pdf",
-#     width = 9, height = 8, units = "in", device = cairo_pdf
-# )
+
+library(patchwork)
+
+multi <- (free(c_1) | (a / d1_p)) + 
+    plot_layout(widths = c(2, 1.5)) +
+    plot_annotation(tag_levels = "A") &
+    theme(
+        plot.tag = element_text(face = "bold", family = "Calibri", size = 25)
+    )
+
+
+outfolder <- "../results/tools/patchwork"
+dir.create(outfolder)
+
+ggsave(
+    plot = multi, filename = paste0(outfolder, "/figure.png"),
+    width = 14, height = 14, units = "in", dpi = 600
+)
+
+ggsave(
+    plot = multi, filename = paste0(outfolder, "/figure.pdf"),
+    width = 14, height = 14, units = "in", device = cairo_pdf
+)
+
+ggsave(
+    plot = multi, filename = paste0(outfolder, "/figure.svg"),
+    width = 14, height = 14, units = "in"
+)
 
 ```
