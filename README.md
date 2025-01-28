@@ -18,6 +18,8 @@ This repository includes all the scripts written to produce figures in the paper
 
 # Usage
 
+## Retrieve citations
+
 - Launch [Jupyter](https://jupyter.org/) to access the notebooks to generate graphs
 
     ```
@@ -25,3 +27,16 @@ This repository includes all the scripts written to produce figures in the paper
     ```
 
 - Go to [http://localhost:8888](http://localhost:8888) (a page should open automatically in your browser)
+
+## Update data
+
+- Launch the dedicated script
+
+    ```
+    $ bash bin/get_data.sh
+    ```
+
+
+
+
+
