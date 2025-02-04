@@ -39,14 +39,14 @@ library(packcircles)
 ## THERE IS A BUG UNFORTUNATELY WITH fread FUNCTION
 ## RUN ON CONSOLE IN THIS CASE
 
-microGalaxy_tutorials_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/tutorials.tsv"
-microGalaxy_tools_url     <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/curated_tools.tsv"
-all_tools_url            <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/all/resources/tools.tsv"
+microGalaxy_tutorials_url <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/docs/supplementary/supplementary_table_5.tsv"
+microGalaxy_tools_url     <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/docs/supplementary/supplementary_table_3.tsv"
+# all_tools_url             <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/all/resources/tools.tsv"
 
 
 microGalaxy_tutorials_dt <- microGalaxy_tutorials_url |> fread()
 microGalaxy_tools_dt     <- microGalaxy_tools_url |> fread()
-all_tools_dt            <- all_tools_url |> fread()
+# all_tools_dt            <- all_tools_url |> fread()
 
 ```
 
@@ -68,34 +68,46 @@ dt1$Title <- microGalaxy_tutorials_dt[dt1$Topic_id]$Title
 dt1$`EDAM topic`     <- microGalaxy_tutorials_dt[dt1$Topic_id]$`EDAM topic`
 dt1$`EDAM operation` <- microGalaxy_tutorials_dt[dt1$Topic_id]$`EDAM operation`
 
+tmp <- microGalaxy_tools_dt$`Tool IDs` |>
+    str_split("\\,") |>
+    lapply(str_squish) |>
+    lapply(function(q) data.table("Tool ID" = str_squish(q))) |>
+    rbindlist(idcol = "id")
+
+tmp$`Suite ID` <- microGalaxy_tools_dt[tmp$id]$`Suite ID`
+
+index <- match(dt1$`Tool ID`, tmp$`Tool ID`)
+
+dt1$`Suite ID` = tmp[index]$`Suite ID`
+
 # 2 ------------------------------------
 
-tmp <- all_tools_dt[, c("Suite ID", "Tool IDs"), with = FALSE] |> unique()
-tmp <- tmp[which(`Tool IDs` != "")]
-tmp <- tmp |> tidyr::separate_rows("Tool IDs", sep = ",") |> setDT()
-tmp$`Tool IDs` <- tmp$`Tool IDs` |> str_squish()
+# tmp <- all_tools_dt[, c("Suite ID", "Tool IDs"), with = FALSE] |> unique()
+# tmp <- tmp[which(`Tool IDs` != "")]
+# tmp <- tmp |> tidyr::separate_rows("Tool IDs", sep = ",") |> setDT()
+# tmp$`Tool IDs` <- tmp$`Tool IDs` |> str_squish()
 
-# 3 ------------------
+# # 3 ------------------
 
-index = match(dt1$`Tool ID`, tmp$`Tool IDs`)
+# index = match(dt1$`Tool ID`, tmp$`Tool IDs`)
 
-dt1$`Suite ID` = tmp[index][[1]]
+# dt1$`Suite ID` = tmp[index][[1]]
 
 # 4 ----------------------------
 
-microGalaxy_tutorials_dt$`Total No. of tools` = microGalaxy_tutorials_dt$Tools |>
-    str_split("\\,") |>
-    lapply(str_squish) |>
-    lapply(length) |>
-    unlist()
+# microGalaxy_tutorials_dt$`Total No. of tools` = microGalaxy_tutorials_dt$Tools |>
+#     str_split("\\,") |>
+#     lapply(str_squish) |>
+#     lapply(length) |>
+#     unlist()
 
-microGalaxy_tutorials_dt$`No. of microGalaxy related tools` = microGalaxy_tutorials_dt$Tools |>
-    str_split("\\,") |>
-    lapply(str_squish) |>
-    lapply(function(q) which(q %in% tmp$`Tool IDs`) |> length() ) |>
-    unlist()
+# microGalaxy_tutorials_dt$`No. of microGalaxy related tools` = microGalaxy_tutorials_dt$Tools |>
+#     str_split("\\,") |>
+#     lapply(str_squish) |>
+#     lapply(function(q) which(q %in% tmp$`Tool IDs`) |> length() ) |>
+#     unlist()
 
-microGalaxy_tutorials_dt$`No. of other tools` = microGalaxy_tutorials_dt$`Total No. of tools` - microGalaxy_tutorials_dt$`No. of microGalaxy related tools`
+# microGalaxy_tutorials_dt$`No. of other tools` = microGalaxy_tutorials_dt$`Total No. of tools` - microGalaxy_tutorials_dt$`No. of microGalaxy related tools`
 
 ```
 
@@ -304,11 +316,11 @@ a_2 <- dt2 |>
 ```{r}
 
 # ----------------------
-d1 <- tutorials_dt[, c("Title", "EDAM topic"), with = FALSE] |>
+d1 <- microGalaxy_tutorials_dt[, c("Title", "EDAM topic"), with = FALSE] |>
     tidyr::separate_rows("EDAM topic", sep = ",") |>
     setDT()
 
-d2 <- tutorials_dt[, c("Title", "EDAM operation"), with = FALSE] |>
+d2 <- microGalaxy_tutorials_dt[, c("Title", "EDAM operation"), with = FALSE] |>
     tidyr::separate_rows("EDAM operation", sep = ",") |>
     setDT()
 
@@ -405,7 +417,7 @@ b <- d |>
 
 ```{r}
 
-dir.create("../results/tutorials", showWarnings = FALSE)
+dir.create("results/tutorials", showWarnings = FALSE)
 
 # dt --------------------------
 
