@@ -19,7 +19,7 @@ library(stringr)
 ## Input data 
 
 ```{r}
-df <- "https://raw.githubusercontent.com/npechl/microgalaxy_technical_paper_2024/refs/heads/plotscripts/docs/supplementary/supplementary_table_2.tsv" |> fread()
+df <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_technical_paper_2024/refs/heads/main/docs/supplementary/supplementary_table_2.tsv" |> fread()
 ```
 
 ### Correct column names 
