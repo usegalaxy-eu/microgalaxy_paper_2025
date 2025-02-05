@@ -417,7 +417,7 @@ b <- d |>
 
 ```{r}
 
-dir.create("results/tutorials", showWarnings = FALSE)
+dir.create("../results/tutorials", showWarnings = FALSE)
 
 # dt --------------------------
 

@@ -195,7 +195,7 @@ c_2 <- p |>
 ### Save plots
 
 ```{r}
-outfolder <- "results/tools/availability-heatmap"
+outfolder <- "../results/tools/availability-heatmap"
 
 dir.create(outfolder)
 
@@ -680,7 +680,7 @@ multi <- (free(c_1) | (a / d1_p)) +
     )
 
 
-outfolder <- "results/tools/patchwork"
+outfolder <- "../results/tools/patchwork"
 dir.create(outfolder)
 
 ggsave(
