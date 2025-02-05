@@ -288,7 +288,7 @@ a_2 <- dt2 |>
     
     theme_minimal(base_family = "Calibri") +
     theme(
-        axis.text.x = element_text(size = 3, angle = 45, hjust = 1),
+        axis.text.x = element_text(size = 4, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 6),
         
         axis.title.x = element_text(margin = margin(t = 10)),
