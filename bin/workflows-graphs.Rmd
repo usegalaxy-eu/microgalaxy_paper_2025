@@ -39,8 +39,8 @@ library(packcircles)
 ## THERE IS A BUG UNFORTUNATELY WITH fread FUNCTION
 ## RUN ON CONSOLE IN THIS CASE
 
-workflows_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/curated_workflows.tsv"
-all_tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/all/resources/tools.tsv"
+workflows_url <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/docs/supplementary/supplementary_table_4.tsv"
+all_tools_url <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/docs/supplementary/supplementary_table_3.tsv"
 
 workflows_dt <- workflows_url |> fread(sep = "\t")
 all_tools_dt <- all_tools_url |> fread()
@@ -72,7 +72,7 @@ dt1$`EDAM operation` <- dt1$`EDAM operation` |> str_squish()
 
 dt1 <- dt1[which(!is.na(`Suite ID`)), c("Name", "Suite ID", "EDAM topics", "EDAM operation"), with = FALSE] |> unique()
 
-dt1$`EDAM topics` <- ifelse(dt1$`EDAM topics` == "", "Other", dt1$`EDAM topics`) |> str_wrap(15)
+dt1$`EDAM topics`    <- ifelse(dt1$`EDAM topics` == "", "Other", dt1$`EDAM topics`) |> str_wrap(15)
 dt1$`EDAM operation` <- ifelse(dt1$`EDAM operation` == "", "Other", dt1$`EDAM operation`) |> str_wrap(15)
 
 edam_operations <- dt1[, by = `EDAM operation`, .(N = Name |> unique() |> length())]
@@ -87,7 +87,7 @@ edam_topics     <- edam_topics[order(-N)] |> head(4)
 dt1$`EDAM topics`    <- ifelse(dt1$`EDAM topics` %in% edam_topics$`EDAM topics`, dt1$`EDAM topics`, "Other")
 dt1$`EDAM operation` <- ifelse(dt1$`EDAM operation` %in% edam_operations$`EDAM operation`, dt1$`EDAM operation`, "Other")
 
-dt1$`EDAM topics`     <- dt1$`EDAM topics` |> factor(c(edam_topics$`EDAM topics`, "Other")) 
+dt1$`EDAM topics`    <- dt1$`EDAM topics` |> factor(c(edam_topics$`EDAM topics`, "Other")) 
 dt1$`EDAM operation` <- dt1$`EDAM operation` |> factor(c(edam_operations$`EDAM operation`, "Other")) 
 
 

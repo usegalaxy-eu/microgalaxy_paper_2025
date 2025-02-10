@@ -39,10 +39,10 @@ library(patchwork)
 ## Input data
 
 ```{r}
-years   <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_technical_paper_2024/refs/heads/main/results/citations/years.csv")
-methods <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_technical_paper_2024/refs/heads/main/results/citations/methods.csv")
-target_technical <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_technical_paper_2024/refs/heads/main/results/citations/technical_target.csv")
-target_organisms <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_technical_paper_2024/refs/heads/main/results/citations/targeted_organisms.csv")
+years            <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/years.csv")
+methods          <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/methods.csv")
+target_technical <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/technical_target.csv")
+target_organisms <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/targeted_organisms.csv")
 
 years$year <- seq(2005, 2025)
 years <- years |> melt(id.vars = "year", value.factor = FALSE, variable.factor = FALSE)
