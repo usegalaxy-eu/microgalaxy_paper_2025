@@ -195,39 +195,39 @@ c_2 <- p |>
 ### Save plots
 
 ```{r}
-outfolder <- "../results/tools/availability-heatmap"
-
-dir.create(outfolder)
-
-ggsave(
-    plot = c_1, filename = paste0(outfolder, "/heatmap-1.png"),
-    width = 5, height = 18, units = "in", dpi = 600
-)
-
-ggsave(
-    plot = c_1, filename = paste0(outfolder, "/heatmap-1.svg"),
-    width = 5, height = 18, units = "in"
-)
-
-ggsave(
-    plot = c_1, filename = paste0(outfolder, "/heatmap-1.pdf"),
-    width = 5, height = 18, units = "in", device = cairo_pdf
-)
-
-ggsave(
-    plot = c_2, filename = paste0(outfolder, "/heatmap-2.png"),
-    width = 5, height = 18, units = "in", dpi = 600
-)
-
-ggsave(
-    plot = c_2, filename = paste0(outfolder, "/heatmap-2.svg"),
-    width = 5, height = 18, units = "in"
-)
-
-ggsave(
-    plot = c_2, filename = paste0(outfolder, "/heatmap-2.pdf"),
-    width = 5, height = 18, units = "in", device = cairo_pdf
-)
+# outfolder <- "../results/tools/availability-heatmap"
+# 
+# dir.create(outfolder)
+# 
+# ggsave(
+#     plot = c_1, filename = paste0(outfolder, "/heatmap-1.png"),
+#     width = 5, height = 18, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = c_1, filename = paste0(outfolder, "/heatmap-1.svg"),
+#     width = 5, height = 18, units = "in"
+# )
+# 
+# ggsave(
+#     plot = c_1, filename = paste0(outfolder, "/heatmap-1.pdf"),
+#     width = 5, height = 18, units = "in", device = cairo_pdf
+# )
+# 
+# ggsave(
+#     plot = c_2, filename = paste0(outfolder, "/heatmap-2.png"),
+#     width = 5, height = 18, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = c_2, filename = paste0(outfolder, "/heatmap-2.svg"),
+#     width = 5, height = 18, units = "in"
+# )
+# 
+# ggsave(
+#     plot = c_2, filename = paste0(outfolder, "/heatmap-2.pdf"),
+#     width = 5, height = 18, units = "in", device = cairo_pdf
+# )
 ```
 
 
@@ -446,24 +446,24 @@ a <- df2 |>
 
 ```{r}
 
-outfolder <- paste0("../results/tools/", xvar |> str_remove_all("Suite|runs|\\*|\\(|\\)") |> str_squish())
-
-dir.create(outfolder)
-
-ggsave(
-    plot = a, filename = paste0(outfolder, "/tools-scatter-plot.png"),
-    width = 12, height = 9, units = "in", dpi = 600
-)
-
-ggsave(
-    plot = a, filename = paste0(outfolder, "/tools-scatter-plot.svg"),
-    width = 12, height = 9, units = "in"
-)
-
-ggsave(
-    plot = a, filename = paste0(outfolder, "/tools-scatter-plot.pdf"),
-    width = 12, height = 9, units = "in", device = cairo_pdf
-)
+# outfolder <- paste0("../results/tools/", xvar |> str_remove_all("Suite|runs|\\*|\\(|\\)") |> str_squish())
+# 
+# dir.create(outfolder)
+# 
+# ggsave(
+#     plot = a, filename = paste0(outfolder, "/tools-scatter-plot.png"),
+#     width = 12, height = 9, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = a, filename = paste0(outfolder, "/tools-scatter-plot.svg"),
+#     width = 12, height = 9, units = "in"
+# )
+# 
+# ggsave(
+#     plot = a, filename = paste0(outfolder, "/tools-scatter-plot.pdf"),
+#     width = 12, height = 9, units = "in", device = cairo_pdf
+# )
 
 ```
 
@@ -638,31 +638,31 @@ d1_p <- d1 |>
         axis.line = element_line(lineend = "round"),
         axis.ticks = element_line(lineend = "round")
     ) +
-    labs(y = "Cumulative number of tools")
+    labs(y = "Cumulative number of tool suites")
 ```
 
 ### Save plot
 
 ```{r}
 
-outfolder <- "../results/tools/number of tools"
-
-dir.create(outfolder)
-
-ggsave(
-    plot = d1_p, filename = paste0(outfolder, "/ntools.png"),
-    width = 9, height = 8, units = "in", dpi = 600
-)
-
-ggsave(
-    plot = d1_p, filename = paste0(outfolder, "/ntools.svg"),
-    width = 9, height = 8, units = "in"
-)
-
-ggsave(
-    plot = d1_p, filename = paste0(outfolder, "/ntools.pdf"),
-    width = 9, height = 8, units = "in", device = cairo_pdf
-)
+# outfolder <- "../results/tools/number of tools"
+# 
+# dir.create(outfolder)
+# 
+# ggsave(
+#     plot = d1_p, filename = paste0(outfolder, "/ntools.png"),
+#     width = 9, height = 8, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = d1_p, filename = paste0(outfolder, "/ntools.svg"),
+#     width = 9, height = 8, units = "in"
+# )
+# 
+# ggsave(
+#     plot = d1_p, filename = paste0(outfolder, "/ntools.pdf"),
+#     width = 9, height = 8, units = "in", device = cairo_pdf
+# )
 ```
 
 
@@ -680,22 +680,23 @@ multi <- (free(c_1) | (a / d1_p)) +
     )
 
 
-outfolder <- "../results/tools/patchwork"
-dir.create(outfolder)
+outfolder <- "../docs/extended/"
+
+dir.create(outfolder, showWarnings = FALSE)
 
 ggsave(
-    plot = multi, filename = paste0(outfolder, "/figure.png"),
-    width = 14, height = 14, units = "in", dpi = 600
+    plot = multi, filename = paste0(outfolder, "/extended_figure_3.png"),
+    width = 14, height = 16, units = "in", dpi = 600
 )
 
 ggsave(
-    plot = multi, filename = paste0(outfolder, "/figure.pdf"),
-    width = 14, height = 14, units = "in", device = cairo_pdf
+    plot = multi, filename = paste0(outfolder, "/extended_figure_3.pdf"),
+    width = 14, height = 16, units = "in", device = cairo_pdf
 )
 
 ggsave(
-    plot = multi, filename = paste0(outfolder, "/figure.svg"),
-    width = 14, height = 14, units = "in"
+    plot = multi, filename = paste0(outfolder, "/extended_figure_3.svg"),
+    width = 14, height = 16, units = "in"
 )
 
 ```
