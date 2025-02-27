@@ -138,7 +138,7 @@ gr2 <- p0 |>
         
         strip.text = element_text(face = "bold"),
         
-        axis.title.x = element_text(margin = margin(t = 10)),
+        axis.title.x = element_blank(), # element_text(margin = margin(t = 10)),
         axis.title.y = element_markdown(margin = margin(r = 10))
     ) +
     
