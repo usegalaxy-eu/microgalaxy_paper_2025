@@ -44,7 +44,7 @@ methods          <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microg
 target_technical <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/technical_target.csv")
 target_organisms <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/targeted_organisms.csv")
 
-years$year <- seq(2005, 2025)
+years$year <- seq(2005, 2026)
 years <- years |> melt(id.vars = "year", value.factor = FALSE, variable.factor = FALSE)
 years$variable <- years$variable |> str_to_title()
 
@@ -70,7 +70,7 @@ gr1 <- years |>
     ggplot(aes(year, value)) +
     
     geom_point(aes(fill = variable), color = "grey25", 
-               shape = 21, size = 5.5, stroke = .25, 
+               shape = 21, size = 5.3, stroke = .25, 
                position = position_dodge(width = .9)) +
     
     geom_col(aes(fill = variable), color = "grey25", 
@@ -78,7 +78,7 @@ gr1 <- years |>
              position = position_dodge(width = .9)) +
     
     geom_point(aes(color = variable),
-               size = 4.85,
+               size = 4.65,
                position = position_dodge(width = .9)) +
     
     scale_x_continuous(expand = c(0, 0)) +
@@ -157,22 +157,22 @@ multi <- (gr1 / gr2) +
 
 
 ```{r}
-outfolder <- "../results/citations/"
+outfolder <- "../docs/extended/"
 
 dir.create(outfolder, showWarnings = FALSE)
 
 ggsave(
-    plot = multi, filename = paste0(outfolder, "/citations.png"),
+    plot = multi, filename = paste0(outfolder, "/extended_figure_1.png"),
     width = 9, height = 10, units = "in", dpi = 600
 )
 
 ggsave(
-    plot = multi, filename = paste0(outfolder, "/citations.svg"),
+    plot = multi, filename = paste0(outfolder, "/extended_figure_1.svg"),
     width = 9, height = 10, units = "in", dpi = 600
 )
 
 ggsave(
-    plot = multi, filename = paste0(outfolder, "/citations.pdf"),
+    plot = multi, filename = paste0(outfolder, "/extended_figure_1.pdf"),
     width = 9, height = 10, units = "in", device = cairo_pdf
 )
 
