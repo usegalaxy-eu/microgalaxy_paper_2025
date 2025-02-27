@@ -13,6 +13,7 @@ dependencies:
 - r-base
 - r-data.table
 - r-stringr
+- r-rmarkdown
 - r-tidytext
 - r-tidyr
 - r-ggplot2
