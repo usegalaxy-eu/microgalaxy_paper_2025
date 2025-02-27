@@ -1,0 +1,36 @@
+name: Update data
+
+on:
+  workflow_dispatch:
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "tools"
+  cancel-in-progress: false
+
+jobs:
+  get-data:
+    runs-on: ubuntu-20.04
+    name: Update data
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+      - name: Update data
+        run: |
+          bash bin/get_data.sh
+      - name: Archive data
+        uses: actions/upload-artifact@v4
+        with:
+          name: data
+          path: docs/supplementary/available_public_servers.csv
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          commit-message: Update data
+          title: Update data
+          body: Update data from the codex
+          base: main
+          branch: update-data
+          delete-branch: true
+      
