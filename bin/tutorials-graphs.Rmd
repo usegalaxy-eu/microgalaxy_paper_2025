@@ -418,6 +418,7 @@ b <- d |>
 ```{r}
 
 dir.create("../results/tutorials", showWarnings = FALSE)
+dir.create("../docs/extended/", showWarnings = FALSE)
 
 # dt --------------------------
 
@@ -425,33 +426,33 @@ writexl::write_xlsx(dt1, "../results/tutorials/microGalaxy-tools.xlsx")
 
 # 1 ---------------
 
-ggsave(
-    plot = a_1, filename = "../results/tutorials/heatmap-1.png",
-    width = 16, height = 8, units = "in", dpi = 600
-)
+# ggsave(
+#     plot = a_1, filename = "../results/tutorials/heatmap-1.png",
+#     width = 16, height = 8, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = a_1, filename = "../results/tutorials/heatmap-1.svg",
+#     width = 16, height = 8, units = "in"
+# )
+# 
+# ggsave(
+#     plot = a_1, filename = "../results/tutorials/heatmap-1.pdf",
+#     width = 16, height = 8, units = "in", device = cairo_pdf
+# )
 
 ggsave(
-    plot = a_1, filename = "../results/tutorials/heatmap-1.svg",
-    width = 16, height = 8, units = "in"
-)
-
-ggsave(
-    plot = a_1, filename = "../results/tutorials/heatmap-1.pdf",
-    width = 16, height = 8, units = "in", device = cairo_pdf
-)
-
-ggsave(
-    plot = a_2, filename = "../results/tutorials/heatmap-2.png",
+    plot = a_2, filename = "../docs/extended/extended_figure_5.png",
     width = 20, height = 10, units = "in", dpi = 600
 )
 
 ggsave(
-    plot = a_2, filename = "../results/tutorials/heatmap-2.svg",
+    plot = a_2, filename = "../docs/extended/extended_figure_5.svg",
     width = 16, height = 10, units = "in"
 )
 
 ggsave(
-    plot = a_2, filename = "../results/tutorials/heatmap-2.pdf",
+    plot = a_2, filename = "../docs/extended/extended_figure_5.pdf",
     width = 16, height = 10, units = "in", device = cairo_pdf
 )
 

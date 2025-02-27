@@ -1,61 +1,79 @@
 Name	No. of suites	Perc. of suites
-MAGs building with individual assembly	12	0.15
-MetaG: Preparation, Building and Annotation of Metagenomics Assembled Genomes	10	0.125
-Flye-AMR workflow EMC/WMDI - v3.5  (imported from URL)	9	0.1125
-Metagenomic Taxonomy and Functional Analysis	8	0.1
-GTN Training - Antibiotic Resistance Detection	7	0.0875
-Copy Of GTN Training - Antibiotic Resistance Detection	7	0.0875
-ASaiM-MT: Metatranscriptomics Analysis of Microbes	7	0.0875
-Taxonomic Profiling and Visualization of Metagenomic Data	6	0.075
-pAllori Amplicon 16S Pre-Processing and Taxonomy Classification	6	0.075
-quality-and-contamination-control/main	5	0.0625
-bacterial_genome_annotation/main	5	0.0625
-pox-virus-amplicon/main	5	0.0625
-AMR-Pathfinder	5	0.0625
-MGnify's amplicon pipeline v5.0 - rRNA prediction	5	0.0625
-bacterial-genome-assembly/main	4	0.05
-amr_gene_detection/main	4	0.05
-Taxonomy classification using Kraken2 and Bracken	4	0.05
-Workflow 4: Staramr	4	0.05
-Identification of the micro-organisms in a beer using Nanopore sequencing	4	0.05
-Training: 16S rRNA Analysis with Nanopore Sequencing Reads	4	0.05
-metaQuantome_datacreation_workflow	4	0.05
-1: Plant virus detection with kraken2 (SE)	3	0.0375
-1: Plant virus detection with kraken2 (PE)	3	0.0375
-Analyses of shotgun metagenomics data with MetaPhlAn2	3	0.0375
-Training: 16S rRNA Sequencing With Mothur: Main Tutorial	3	0.0375
-MGnify's amplicon pipeline v5.0 - Quality control PE	3	0.0375
-MGnify's amplicon pipeline v5.0 - ITS	3	0.0375
-3: Plant virus exploration	2	0.025
-2: Plant virus confirmation	2	0.025
-Workflow 7 : Beta Diversity [16S Microbial Analysis With Mothur]	2	0.025
-Workflow7: Beta Diversity [Galaxy Training: 16S Microbial Analysis With Mothur]	2	0.025
-Building an amplicon sequence variant (ASV) table from 16S data using DADA2	2	0.025
-MetaT: Metatranscriptomics data analysis	2	0.025
-Halophiles workup of Comparative gene analysis	2	0.025
-pAllori Blood RNA	2	0.025
-Metaproteomics workflow	2	0.025
-Cloud Aerosol MT-MG Contamination Filtering	2	0.025
-Cloud-Aerosole MT-MG Functional Profiling	2	0.025
-Comparative gene analysis	2	0.025
-Workflow 6: Alpha Diversity [16S Microbial Analysis With Mothur]	1	0.0125
-Workflow 5: OTU Clustering [16S Microbial Analysis With Mothur]	1	0.0125
-Workflow 3: Classification [Galaxy Training: 16S Microbial Analysis With Mothur]	1	0.0125
-Workflow 1: Further Quality Control [16S Microbial Analysis With Mothur]	1	0.0125
-Workflow 2: Data Cleaning And Chimera Removal [16S Microbial Analysis With Mothur]	1	0.0125
-Workflow for Identifying MF from ITS2 sequencing using LotuS2 - tutorial example run'	1	0.0125
-Workflow 5: OTU Clustering [Galaxy Training: 16S Microbial Analysis With Mothur]	1	0.0125
-Workflow 6: Alpha Diversity [Galaxy Training: 16S Microbial Analysis With Mothur]	1	0.0125
-Workflow 4: Mock OTU Clustering [Galaxy Training: 16S Microbial Analysis With Mothur]	1	0.0125
-Workflow 1: Quality Control [Galaxy Training: 16S Microbial Analysis With Mothur]	1	0.0125
-Workflow 2: Data Cleaning And Chimera Removal [Galaxy Training: 16S Microbial Analysis With Mothur]	1	0.0125
-Workflow 3: Functional Information (quick)	1	0.0125
-Amplicon Tutorial	1	0.0125
-WGS Part In ""Analyses Of Metagenomics Data - The Global Picture""	1	0.0125
-MGnify's amplicon pipeline v5.0 - Quality control SE	1	0.0125
-metaquantome-function-worklow	1	0.0125
-Cloud-Aerosole MT-MG Pre-Processing	1	0.0125
-Allele-based Pathogen Identification (release v0.1.2)	1	0.0125
-Apollo Load Test	1	0.0125
-From Fastqs to VCFs and BAMs	1	0.0125
-From BAMs to drug resistance prediction with TB-profiler	1	0.0125
+MAGs building with individual assembly	12	0.129032258064516
+MetaG: Preparation, Building and Annotation of Metagenomics Assembled Genomes	10	0.10752688172043
+Flye-AMR workflow EMC/WMDI - v3.5  (imported from URL)	9	0.0967741935483871
+Metagenomic Taxonomy and Functional Analysis	8	0.0860215053763441
+GTN Training - Antibiotic Resistance Detection	7	0.0752688172043011
+TB Variant Analysis v1.0	7	0.0752688172043011
+Workflow 3: AMR - SeqSero2/SISTR	7	0.0752688172043011
+Copy Of GTN Training - Antibiotic Resistance Detection	7	0.0752688172043011
+pAllori Amplicon 16S Pre-Processing and Taxonomy Classification	7	0.0752688172043011
+ASaiM-MT: Metatranscriptomics Analysis of Microbes	7	0.0752688172043011
+mgnify-amplicon-pipeline-v5-rrna-prediction/main	6	0.0645161290322581
+Taxonomic Profiling and Visualization of Metagenomic Data	6	0.0645161290322581
+quality-and-contamination-control/main	5	0.0537634408602151
+bacterial_genome_annotation/main	5	0.0537634408602151
+pox-virus-amplicon/main	5	0.0537634408602151
+AMR-Pathfinder	5	0.0537634408602151
+mgnify-amplicon-pipeline-v5-its/main	4	0.0430107526881721
+bacterial-genome-assembly/main	4	0.0430107526881721
+gene-based-pathogen-identification/main	4	0.0430107526881721
+amr_gene_detection/main	4	0.0430107526881721
+Taxonomy classification using Kraken2 and Bracken	4	0.0430107526881721
+Workflow 4: Staramr	4	0.0430107526881721
+Quality and contamination control in bacterial isolate using Illumina MiSeq Data	4	0.0430107526881721
+Identification of the micro-organisms in a beer using Nanopore sequencing	4	0.0430107526881721
+Training: 16S rRNA Analysis with Nanopore Sequencing Reads	4	0.0430107526881721
+metaQuantome_datacreation_workflow	4	0.0430107526881721
+mgnify-amplicon-pipeline-v5-quality-control-paired-end/main	3	0.032258064516129
+clinicalmp-discovery/main	3	0.032258064516129
+pathogen-detection-pathogfair-samples-aggregation-and-visualisation/main	3	0.032258064516129
+taxonomy-profiling-and-visualization-with-krona/main	3	0.032258064516129
+1: Plant virus detection with kraken2 (SE)	3	0.032258064516129
+1: Plant virus detection with kraken2 (PE)	3	0.032258064516129
+Analyses of shotgun metagenomics data with MetaPhlAn2	3	0.032258064516129
+Checking expected species and contamination in bacterial isolate	3	0.032258064516129
+Training: 16S rRNA Sequencing With Mothur: Main Tutorial	3	0.032258064516129
+clinicalmp-data-interpretation/main	2	0.021505376344086
+3: Plant virus exploration	2	0.021505376344086
+2: Plant virus confirmation	2	0.021505376344086
+Workflow 7 : Beta Diversity [16S Microbial Analysis With Mothur]	2	0.021505376344086
+Workflow7: Beta Diversity [Galaxy Training: 16S Microbial Analysis With Mothur]	2	0.021505376344086
+Building an amplicon sequence variant (ASV) table from 16S data using DADA2	2	0.021505376344086
+pAllori Blood RNA	2	0.021505376344086
+MetaT: Metatranscriptomics data analysis	2	0.021505376344086
+Halophiles workup of Comparative gene analysis	2	0.021505376344086
+Metaproteomics workflow	2	0.021505376344086
+Cloud Aerosol MT-MG Contamination Filtering	2	0.021505376344086
+Cloud-Aerosole MT-MG Functional Profiling	2	0.021505376344086
+Comparative gene analysis	2	0.021505376344086
+mgnify-amplicon-pipeline-v5-complete/main	1	0.010752688172043
+mgnify-amplicon-pipeline-v5-quality-control-single-end/main	1	0.010752688172043
+clinicalmp-verification/main	1	0.010752688172043
+clinicalmp-database-generation/main	1	0.010752688172043
+clinicalmp-quantitation/main	1	0.010752688172043
+allele-based-pathogen-identification/main	1	0.010752688172043
+dada2/main	1	0.010752688172043
+Refining Genome Annotations with Apollo (prokaryotes)	1	0.010752688172043
+Workflow 6: Alpha Diversity [16S Microbial Analysis With Mothur]	1	0.010752688172043
+Workflow 5: OTU Clustering [16S Microbial Analysis With Mothur]	1	0.010752688172043
+Workflow 3: Classification [Galaxy Training: 16S Microbial Analysis With Mothur]	1	0.010752688172043
+Workflow 1: Further Quality Control [16S Microbial Analysis With Mothur]	1	0.010752688172043
+Workflow 2: Data Cleaning And Chimera Removal [16S Microbial Analysis With Mothur]	1	0.010752688172043
+Workflow 1: AbritAMR	1	0.010752688172043
+Workflow for Identifying MF from ITS2 sequencing using LotuS2 - tutorial example run'	1	0.010752688172043
+Calculating diversity from microbiome taxonomic data	1	0.010752688172043
+Workflow 5: OTU Clustering [Galaxy Training: 16S Microbial Analysis With Mothur]	1	0.010752688172043
+Workflow 6: Alpha Diversity [Galaxy Training: 16S Microbial Analysis With Mothur]	1	0.010752688172043
+Workflow 4: Mock OTU Clustering [Galaxy Training: 16S Microbial Analysis With Mothur]	1	0.010752688172043
+Workflow 1: Quality Control [Galaxy Training: 16S Microbial Analysis With Mothur]	1	0.010752688172043
+Workflow 2: Data Cleaning And Chimera Removal [Galaxy Training: 16S Microbial Analysis With Mothur]	1	0.010752688172043
+Workflow 3: Functional Information (quick)	1	0.010752688172043
+pox-virus-tiled-amplicon-ref-masking	1	0.010752688172043
+Amplicon Tutorial	1	0.010752688172043
+WGS Part In ""Analyses Of Metagenomics Data - The Global Picture""	1	0.010752688172043
+metaquantome-function-worklow	1	0.010752688172043
+Cloud-Aerosole MT-MG Pre-Processing	1	0.010752688172043
+Apollo Load Test	1	0.010752688172043
+From Fastqs to VCFs and BAMs	1	0.010752688172043
+From BAMs to drug resistance prediction with TB-profiler	1	0.010752688172043
