@@ -221,6 +221,7 @@ library(ggh4x)
 
 library(shadowtext)
 
+library(paletteer)
 library(tidytext)
 ```
 
@@ -299,13 +300,13 @@ gr <- df_plot |>
 ```{r}
 # dir.create("survey-figure", showWarnings = FALSE)
 
-outfolder <- "../results/survey"
+outfolder <- "../docs/extended/"
 
 dir.create(outfolder, showWarnings = FALSE)
 
-ggsave(plot = gr, filename = paste0(outfolder, "/survey-results.png"), width = 9, height = 10, units = "in", dpi = 600)
-ggsave(plot = gr, filename = paste0(outfolder, "/survey-results.pdf"), width = 9, height = 10, units = "in", device = cairo_pdf)
-ggsave(plot = gr, filename = paste0(outfolder, "/survey-results.svg"), width = 9, height = 10, units = "in")
+ggsave(plot = gr, filename = paste0(outfolder, "/extended_figure_2.png"), width = 9, height = 10, units = "in", dpi = 600)
+ggsave(plot = gr, filename = paste0(outfolder, "/extended_figure_2.pdf"), width = 9, height = 10, units = "in", device = cairo_pdf)
+ggsave(plot = gr, filename = paste0(outfolder, "/extended_figure_2.svg"), width = 9, height = 10, units = "in")
 ```
 
 
