@@ -35,7 +35,7 @@ This repository includes all the scripts written to produce figures in the paper
     ```
     $ bash bin/get_data.sh
     ```
-## Rebuild Extened Figures
+## Rebuild Extended Figures
 
 ```{r}
 Rscript -e "rmarkdown::render('bin/citations-graphs.Rmd', output_dir = 'bin')"      # Extended Figure 1
