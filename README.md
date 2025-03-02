@@ -35,7 +35,15 @@ This repository includes all the scripts written to produce figures in the paper
     ```
     $ bash bin/get_data.sh
     ```
+## Rebuild Extended Figures
 
+```{r}
+Rscript -e "rmarkdown::render('bin/citations-graphs.Rmd',output_file = tempfile())"      # Extended Figure 1
+Rscript -e "rmarkdown::render('bin/survey-figure.Rmd', output_file = tempfile())"         # Extended Figure 2
+Rscript -e "rmarkdown::render('bin/tools-graphs.Rmd', output_file = tempfile())"          # Extended Figure 3
+Rscript -e "rmarkdown::render('bin/workflows-graphs.Rmd', output_file = tempfile())"      # Extended Figure 4
+Rscript -e "rmarkdown::render('bin/tutorials-graphs.Rmd', output_file = tempfile())"      # Extended Figure 5
+```
 
 
 

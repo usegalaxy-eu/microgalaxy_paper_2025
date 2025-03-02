@@ -2,7 +2,6 @@
 title: "tools-graphs"
 author: "Nikos Pechlivanis"
 date: "2024-08-07"
-output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -23,9 +22,8 @@ library(ggrepel)
 library(ggtext)
 library(ggh4x)
 
-# install.packages("extrafont")
+# install.packages(c("extrafont", "paletteer", "colorspace"))
 library(extrafont)
-
 library(paletteer)
 library(colorspace)
 ```
@@ -38,7 +36,7 @@ library(colorspace)
 ## THERE IS A BUG UNFORTUNATELY WITH fread FUNCTION
 ## RUN ON CONSOLE IN THIS CASE
 
-tools_url <- "https://raw.githubusercontent.com/galaxyproject/galaxy_codex/refs/heads/main/communities/microgalaxy/resources/curated_tools.tsv"
+tools_url <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/docs/supplementary/supplementary_table_2.tsv"
 
 tools_dt <- tools_url |> fread()
 ```
@@ -82,14 +80,13 @@ d <- availability |> melt(id.vars = c("Suite ID", "EDAM reduced topics"), variab
 d <- d[which(value >= 1)]
 
 d$`Suite ID` <- d$`Suite ID` |> factor(levels = mm_c$labels[mm_c$order |> rev()])
-d$variable <- d$variable |> factor(levels = mm_r$labels[mm_r$order |> rev()])
+d$variable   <- d$variable |> factor(levels = mm_r$labels[mm_r$order |> rev()])
 
 d$fct <- ifelse(d$variable |> str_detect("UseGalaxy"), "UseGalaxy", "vOther")
 
 index <- d[which(fct == "UseGalaxy")][[1]] |> unique()
 
-p <- d[which(`Suite ID` %in% index)]
-
+p  <- d[which(`Suite ID` %in% index)]
 p2 <- p |> tidyr::separate_rows("EDAM reduced topics", sep = ",") |> setDT()
 
 p2$`EDAM reduced topics` <- p2$`EDAM reduced topics` |> str_squish()
@@ -103,7 +100,7 @@ p2$edam_clean <- ifelse(p2$`EDAM reduced topics` %in% t$`EDAM reduced topics`, p
 p2$edam_clean <- p2$edam_clean |> factor(levels = c(t$`EDAM reduced topics`, "Other"))
 ```
 
-### Top 5 EDAM Operations
+### Heatmap: Top 5 EDAM Operations
 
 ```{r}
 c_1 <- p2[which(edam_clean != "Other")] |> 
@@ -131,7 +128,7 @@ c_1 <- p2[which(edam_clean != "Other")] |>
         legend.title.position = "top",
         
         axis.text.x = element_text(angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 6),
+        axis.text.y = element_text(size = 5),
         
         axis.title.x = element_markdown(),
         
@@ -150,7 +147,7 @@ c_1 <- p2[which(edam_clean != "Other")] |>
     labs(y = "Galaxy Tool Suites", x = "Availability of Tool Suites Across **Servers**", fill = "No. of Tools")
 ```
 
-### All Tools suties
+### Heatmap: All Tools suties
 
 ```{r}
 
@@ -197,39 +194,39 @@ c_2 <- p |>
 ### Save plots
 
 ```{r}
-outfolder <- "../results/tools/availability-heatmap"
-
-dir.create(outfolder)
-
-ggsave(
-    plot = c_1, filename = paste0(outfolder, "/heatmap-1.png"),
-    width = 5, height = 18, units = "in", dpi = 600
-)
-
-ggsave(
-    plot = c_1, filename = paste0(outfolder, "/heatmap-1.svg"),
-    width = 5, height = 18, units = "in"
-)
-
-ggsave(
-    plot = c_1, filename = paste0(outfolder, "/heatmap-1.pdf"),
-    width = 5, height = 18, units = "in", device = cairo_pdf
-)
-
-ggsave(
-    plot = c_2, filename = paste0(outfolder, "/heatmap-2.png"),
-    width = 5, height = 18, units = "in", dpi = 600
-)
-
-ggsave(
-    plot = c_2, filename = paste0(outfolder, "/heatmap-2.svg"),
-    width = 5, height = 18, units = "in"
-)
-
-ggsave(
-    plot = c_2, filename = paste0(outfolder, "/heatmap-2.pdf"),
-    width = 5, height = 18, units = "in", device = cairo_pdf
-)
+# outfolder <- "../results/tools/availability-heatmap"
+# 
+# dir.create(outfolder)
+# 
+# ggsave(
+#     plot = c_1, filename = paste0(outfolder, "/heatmap-1.png"),
+#     width = 5, height = 18, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = c_1, filename = paste0(outfolder, "/heatmap-1.svg"),
+#     width = 5, height = 18, units = "in"
+# )
+# 
+# ggsave(
+#     plot = c_1, filename = paste0(outfolder, "/heatmap-1.pdf"),
+#     width = 5, height = 18, units = "in", device = cairo_pdf
+# )
+# 
+# ggsave(
+#     plot = c_2, filename = paste0(outfolder, "/heatmap-2.png"),
+#     width = 5, height = 18, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = c_2, filename = paste0(outfolder, "/heatmap-2.svg"),
+#     width = 5, height = 18, units = "in"
+# )
+# 
+# ggsave(
+#     plot = c_2, filename = paste0(outfolder, "/heatmap-2.pdf"),
+#     width = 5, height = 18, units = "in", device = cairo_pdf
+# )
 ```
 
 
@@ -283,7 +280,7 @@ df2 = df2[, c("Suite ID", "runs", "users", "EDAM reduced operations")] |> unique
 ### Define factor levels of cluster column
 
 ```{r}
-st <- st[1:9]
+st <- st[1:15]
 
 df2$cluster <- ifelse(df2$`EDAM reduced operations` %in% st$`EDAM reduced operations`, df2$`EDAM reduced operations` |> as.character(), "Other")
 df2$cluster <- df2$cluster |> factor(levels = c(st$`EDAM reduced operations`, "Other"))
@@ -301,6 +298,10 @@ df2$cluster <- df2$cluster |> factor(levels = c(st$`EDAM reduced operations`, "O
 ```{r}
 df2 <- df2[order(-runs, -users)]
 hg0 <- df2[1:15]
+
+hg1 <- tools_dt[which(str_detect(`EDAM reduced topics`, "Microbial ecology|Phylogenetics"))]
+hg1 <- df2[which(`Suite ID` %in% hg1$`Suite ID`)]
+hg1 <- hg1[which(!(`Suite ID` %in% hg0$`Suite ID`))] |> head()
 ```
 
 ### create graph
@@ -326,6 +327,12 @@ a <- df2 |>
         segment.size = .3, max.overlaps = Inf, size = 3
     ) +
     
+        geom_text_repel(
+        data = hg1, aes(label = `Suite ID`),
+        bg.r = .05, bg.color = "grey96", fontface = "bold", family = "Calibri", box.padding = .5,
+        segment.size = .3, max.overlaps = Inf, size = 3
+    ) +
+    
     scale_x_continuous(
         trans = "log10",  # expand = c(0, 0), 
         limits = c(1, 10000000), 
@@ -339,7 +346,7 @@ a <- df2 |>
         breaks = c(.1, 1, 10, 100, 1000, 10000)
     ) +
     
-    scale_fill_manual(values = c(paletteer_d("ggsci::default_igv", ncolors - 1), "grey") |> lighten(.25), guide = guide_legend(nrow = 3, override.aes = list(size = 2.5))) +
+    scale_fill_manual(values = c(paletteer_d("ggsci::default_igv", ncolors - 1), "grey") |> lighten(.25), guide = guide_legend(ncol = 3, override.aes = list(size = 2.5))) +
     scale_color_manual(values = c(paletteer_d("ggsci::default_igv", ncolors - 1), "grey") |> darken(.25), guide = "none") +
     
     coord_cartesian() +
@@ -448,24 +455,24 @@ a <- df2 |>
 
 ```{r}
 
-outfolder <- paste0("../results/tools/", xvar |> str_remove_all("Suite|runs|\\*|\\(|\\)") |> str_squish())
-
-dir.create(outfolder)
-
-ggsave(
-    plot = a, filename = paste0(outfolder, "/tools-scatter-plot.png"),
-    width = 12, height = 9, units = "in", dpi = 600
-)
-
-ggsave(
-    plot = a, filename = paste0(outfolder, "/tools-scatter-plot.svg"),
-    width = 12, height = 9, units = "in"
-)
-
-ggsave(
-    plot = a, filename = paste0(outfolder, "/tools-scatter-plot.pdf"),
-    width = 12, height = 9, units = "in", device = cairo_pdf
-)
+# outfolder <- paste0("../results/tools/", xvar |> str_remove_all("Suite|runs|\\*|\\(|\\)") |> str_squish())
+# 
+# dir.create(outfolder)
+# 
+# ggsave(
+#     plot = a, filename = paste0(outfolder, "/tools-scatter-plot.png"),
+#     width = 12, height = 9, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = a, filename = paste0(outfolder, "/tools-scatter-plot.svg"),
+#     width = 12, height = 9, units = "in"
+# )
+# 
+# ggsave(
+#     plot = a, filename = paste0(outfolder, "/tools-scatter-plot.pdf"),
+#     width = 12, height = 9, units = "in", device = cairo_pdf
+# )
 
 ```
 
@@ -626,7 +633,7 @@ d1_p <- d1 |>
     
     # geom_point(data = d2, aes(year, N)) +
     scale_x_date(expand = c(0.01, 0.01)) +
-    scale_y_continuous(expand = c(0, 0), breaks = seq(50, 300, by = 50), limits = c(0, 235))+
+    scale_y_continuous(expand = c(0, 0), breaks = seq(50, 300, by = 50), limits = c(0, 300))+
     theme_minimal(base_family = "Calibri") +
     theme(
         # panel.grid.major = element_line(linewidth = .45, color = "grey85"),
@@ -640,31 +647,31 @@ d1_p <- d1 |>
         axis.line = element_line(lineend = "round"),
         axis.ticks = element_line(lineend = "round")
     ) +
-    labs(y = "Cumulative number of tools")
+    labs(y = "Cumulative number of tool suites")
 ```
 
 ### Save plot
 
 ```{r}
 
-outfolder <- "../results/tools/number of tools"
-
-dir.create(outfolder)
-
-ggsave(
-    plot = d1_p, filename = paste0(outfolder, "/ntools.png"),
-    width = 9, height = 8, units = "in", dpi = 600
-)
-
-ggsave(
-    plot = d1_p, filename = paste0(outfolder, "/ntools.svg"),
-    width = 9, height = 8, units = "in"
-)
-
-ggsave(
-    plot = d1_p, filename = paste0(outfolder, "/ntools.pdf"),
-    width = 9, height = 8, units = "in", device = cairo_pdf
-)
+# outfolder <- "../results/tools/number of tools"
+# 
+# dir.create(outfolder)
+# 
+# ggsave(
+#     plot = d1_p, filename = paste0(outfolder, "/ntools.png"),
+#     width = 9, height = 8, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = d1_p, filename = paste0(outfolder, "/ntools.svg"),
+#     width = 9, height = 8, units = "in"
+# )
+# 
+# ggsave(
+#     plot = d1_p, filename = paste0(outfolder, "/ntools.pdf"),
+#     width = 9, height = 8, units = "in", device = cairo_pdf
+# )
 ```
 
 
@@ -678,26 +685,28 @@ multi <- (free(c_1) | (a / d1_p)) +
     plot_layout(widths = c(2, 1.5)) +
     plot_annotation(tag_levels = "A") &
     theme(
-        plot.tag = element_text(face = "bold", family = "Calibri", size = 25)
+        plot.tag = element_text(face = "bold", family = "Calibri", size = 25),
+        plot.margin = margin(r = 15)
     )
 
 
-outfolder <- "../results/tools/patchwork"
-dir.create(outfolder)
+outfolder <- "../docs/extended/"
+
+dir.create(outfolder, showWarnings = FALSE)
 
 ggsave(
-    plot = multi, filename = paste0(outfolder, "/figure.png"),
-    width = 14, height = 14, units = "in", dpi = 600
+    plot = multi, filename = paste0(outfolder, "/extended_figure_3.png"),
+    width = 14, height = 15, units = "in", dpi = 600
 )
 
 ggsave(
-    plot = multi, filename = paste0(outfolder, "/figure.pdf"),
-    width = 14, height = 14, units = "in", device = cairo_pdf
+    plot = multi, filename = paste0(outfolder, "/extended_figure_3.pdf"),
+    width = 14, height = 15, units = "in", device = cairo_pdf
 )
 
 ggsave(
-    plot = multi, filename = paste0(outfolder, "/figure.svg"),
-    width = 14, height = 14, units = "in"
+    plot = multi, filename = paste0(outfolder, "/extended_figure_3.svg"),
+    width = 14, height = 15, units = "in"
 )
 
 ```
