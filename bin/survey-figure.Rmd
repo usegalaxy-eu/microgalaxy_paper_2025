@@ -2,7 +2,6 @@
 title: "survey-figure"
 author: "Nikos Pechlivanis"
 date: "2024-12-12"
-output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -19,7 +18,7 @@ library(stringr)
 ## Input data 
 
 ```{r}
-df <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_technical_paper_2024/refs/heads/main/docs/supplementary/supplementary_table_2.tsv" |> fread()
+df <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_technical_paper_2024/refs/heads/main/docs/supplementary/supplementary_table_1.tsv" |> fread()
 ```
 
 ### Correct column names 

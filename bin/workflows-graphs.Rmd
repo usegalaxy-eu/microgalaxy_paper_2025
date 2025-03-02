@@ -2,7 +2,6 @@
 title: "workflows graphs"
 author: "Nikos Pechlivanis"
 date: "2024-12-17"
-output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -39,8 +38,8 @@ library(packcircles)
 ## THERE IS A BUG UNFORTUNATELY WITH fread FUNCTION
 ## RUN ON CONSOLE IN THIS CASE
 
-workflows_url <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/docs/supplementary/supplementary_table_4.tsv"
-all_tools_url <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/docs/supplementary/supplementary_table_3.tsv"
+workflows_url <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/docs/supplementary/supplementary_table_3.tsv"
+all_tools_url <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/docs/supplementary/supplementary_table_2.tsv"
 
 workflows_dt <- workflows_url |> fread(sep = "\t")
 all_tools_dt <- all_tools_url |> fread()

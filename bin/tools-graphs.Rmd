@@ -2,7 +2,6 @@
 title: "tools-graphs"
 author: "Nikos Pechlivanis"
 date: "2024-08-07"
-output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -37,7 +36,7 @@ library(colorspace)
 ## THERE IS A BUG UNFORTUNATELY WITH fread FUNCTION
 ## RUN ON CONSOLE IN THIS CASE
 
-tools_url <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/docs/supplementary/supplementary_table_3.tsv"
+tools_url <- "https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/docs/supplementary/supplementary_table_2.tsv"
 
 tools_dt <- tools_url |> fread()
 ```
@@ -129,7 +128,7 @@ c_1 <- p2[which(edam_clean != "Other")] |>
         legend.title.position = "top",
         
         axis.text.x = element_text(angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 6),
+        axis.text.y = element_text(size = 5),
         
         axis.title.x = element_markdown(),
         
@@ -281,7 +280,7 @@ df2 = df2[, c("Suite ID", "runs", "users", "EDAM reduced operations")] |> unique
 ### Define factor levels of cluster column
 
 ```{r}
-st <- st[1:12]
+st <- st[1:15]
 
 df2$cluster <- ifelse(df2$`EDAM reduced operations` %in% st$`EDAM reduced operations`, df2$`EDAM reduced operations` |> as.character(), "Other")
 df2$cluster <- df2$cluster |> factor(levels = c(st$`EDAM reduced operations`, "Other"))
@@ -299,6 +298,10 @@ df2$cluster <- df2$cluster |> factor(levels = c(st$`EDAM reduced operations`, "O
 ```{r}
 df2 <- df2[order(-runs, -users)]
 hg0 <- df2[1:15]
+
+hg1 <- tools_dt[which(str_detect(`EDAM reduced topics`, "Microbial ecology|Phylogenetics"))]
+hg1 <- df2[which(`Suite ID` %in% hg1$`Suite ID`)]
+hg1 <- hg1[which(!(`Suite ID` %in% hg0$`Suite ID`))] |> head()
 ```
 
 ### create graph
@@ -324,6 +327,12 @@ a <- df2 |>
         segment.size = .3, max.overlaps = Inf, size = 3
     ) +
     
+        geom_text_repel(
+        data = hg1, aes(label = `Suite ID`),
+        bg.r = .05, bg.color = "grey96", fontface = "bold", family = "Calibri", box.padding = .5,
+        segment.size = .3, max.overlaps = Inf, size = 3
+    ) +
+    
     scale_x_continuous(
         trans = "log10",  # expand = c(0, 0), 
         limits = c(1, 10000000), 
@@ -337,7 +346,7 @@ a <- df2 |>
         breaks = c(.1, 1, 10, 100, 1000, 10000)
     ) +
     
-    scale_fill_manual(values = c(paletteer_d("ggsci::default_igv", ncolors - 1), "grey") |> lighten(.25), guide = guide_legend(nrow = 4, override.aes = list(size = 2.5))) +
+    scale_fill_manual(values = c(paletteer_d("ggsci::default_igv", ncolors - 1), "grey") |> lighten(.25), guide = guide_legend(ncol = 3, override.aes = list(size = 2.5))) +
     scale_color_manual(values = c(paletteer_d("ggsci::default_igv", ncolors - 1), "grey") |> darken(.25), guide = "none") +
     
     coord_cartesian() +
@@ -676,7 +685,8 @@ multi <- (free(c_1) | (a / d1_p)) +
     plot_layout(widths = c(2, 1.5)) +
     plot_annotation(tag_levels = "A") &
     theme(
-        plot.tag = element_text(face = "bold", family = "Calibri", size = 25)
+        plot.tag = element_text(face = "bold", family = "Calibri", size = 25),
+        plot.margin = margin(r = 15)
     )
 
 
@@ -686,17 +696,17 @@ dir.create(outfolder, showWarnings = FALSE)
 
 ggsave(
     plot = multi, filename = paste0(outfolder, "/extended_figure_3.png"),
-    width = 14, height = 16, units = "in", dpi = 600
+    width = 14, height = 15, units = "in", dpi = 600
 )
 
 ggsave(
     plot = multi, filename = paste0(outfolder, "/extended_figure_3.pdf"),
-    width = 14, height = 16, units = "in", device = cairo_pdf
+    width = 14, height = 15, units = "in", device = cairo_pdf
 )
 
 ggsave(
     plot = multi, filename = paste0(outfolder, "/extended_figure_3.svg"),
-    width = 14, height = 16, units = "in"
+    width = 14, height = 15, units = "in"
 )
 
 ```

@@ -2,7 +2,6 @@
 title: "Citations figure"
 author: "Nikos Pechlivanis"
 date: "2024-12-20"
-output: html_document
 ---
 
 ```{r setup, include=FALSE}
