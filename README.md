@@ -1,6 +1,6 @@
-# microGalaxy 2025 Paper
+# Scripts and data associated with Microbiology Galaxy Lab and microGalaxy 2025 Paper
 
-This repository includes all the scripts written to produce figures in the paper along with the resulted figures
+This repository includes all the scripts and data needed to produce figures in the paper along with the resulted figures.
 
 # Requirements
 
@@ -35,14 +35,15 @@ This repository includes all the scripts written to produce figures in the paper
     ```
     $ bash bin/get_data.sh
     ```
+    
 ## Rebuild Extended Figures
 
 ```{r}
-Rscript -e "rmarkdown::render('bin/citations-graphs.Rmd',output_file = tempfile())"      # Extended Figure 1
-Rscript -e "rmarkdown::render('bin/survey-figure.Rmd', output_file = tempfile())"         # Extended Figure 2
-Rscript -e "rmarkdown::render('bin/tools-graphs.Rmd', output_file = tempfile())"          # Extended Figure 3
-Rscript -e "rmarkdown::render('bin/workflows-graphs.Rmd', output_file = tempfile())"      # Extended Figure 4
-Rscript -e "rmarkdown::render('bin/tutorials-graphs.Rmd', output_file = tempfile())"      # Extended Figure 5
+$ Rscript -e "rmarkdown::render('bin/citations-graphs.Rmd',output_file = tempfile())"      # Extended Figure 1
+$ Rscript -e "rmarkdown::render('bin/survey-figure.Rmd', output_file = tempfile())"         # Extended Figure 2
+$ Rscript -e "rmarkdown::render('bin/tools-graphs.Rmd', output_file = tempfile())"          # Extended Figure 3
+$ Rscript -e "rmarkdown::render('bin/workflows-graphs.Rmd', output_file = tempfile())"      # Extended Figure 4
+$ Rscript -e "rmarkdown::render('bin/tutorials-graphs.Rmd', output_file = tempfile())"      # Extended Figure 5
 ```
 
 
