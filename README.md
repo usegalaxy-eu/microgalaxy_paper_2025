@@ -1,6 +1,9 @@
 # microGalaxy 2025 Paper
 
-This repository includes all the scripts written to produce figures in the paper along with the resulted figures
+[![DOI](https://zenodo.org/badge/754032685.svg)](https://doi.org/10.5281/zenodo.15088382)
+
+
+This repository includes all data and the scripts needed to produce figures in the paper along with the resulted figures
 
 # Requirements
 
