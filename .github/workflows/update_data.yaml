@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   get-data:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     name: Update data
     steps:
       - name: Checkout main
