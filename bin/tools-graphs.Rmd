@@ -331,6 +331,8 @@ yvar <- yvar |> str_replace("Suite users", "**Suite users**")
 
 
 library(ggdensity)
+library(ggdist)
+library(ggforce)
 
 # , filter = `Included in` == 'Both'
 
@@ -350,13 +352,13 @@ a <- plot_dt |>
     geom_text_repel(
         data = hg0, aes(label = `Suite ID`),
         bg.r = .05, bg.color = "grey96", fontface = "bold", family = "Calibri", box.padding = .5,
-        segment.size = .3, max.overlaps = Inf, size = 4
+        segment.size = .3, max.overlaps = Inf, size = 3
     ) +
 
     geom_text_repel(
         data = hg1, aes(label = `Suite ID`),
         bg.r = .05, bg.color = "grey96", fontface = "bold", family = "Calibri", box.padding = .5,
-        segment.size = .3, max.overlaps = Inf, size = 4
+        segment.size = .3, max.overlaps = Inf, size = 3
     ) +
     
     scale_color_manual(values = c("Both" = "#4E79A7", "Tutorials" = "#F28E2B", "Workflows" = "#E15759", "Ν/Α" = "grey"), guide = "none") +
@@ -376,12 +378,16 @@ a <- plot_dt |>
     theme_minimal(base_family = "Calibri") +
     theme(
         legend.position = "inside",
-        legend.position.inside = c(.15, .75),
+        legend.position.inside = c(.2, .7),
+        
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 12),
         
         strip.text = element_markdown(),
         
-        axis.title.x = element_markdown(margin = margin(t = 10)),
-        axis.title.y = element_markdown(margin = margin(r = 10)),
+        axis.title.x = element_markdown(margin = margin(t = 10), size = 12),
+        axis.title.y = element_markdown(margin = margin(r = 10), size = 12),
+        axis.text = element_text(size = 12),
         
         # axis.ticks = element_line(linewidth = .3),
         panel.grid.major = element_line(linewidth = .3, linetype = "dashed", lineend = "round", color = "grey75"),
@@ -478,7 +484,7 @@ b <- plot_dt_2 |>
     geom_hline(data = hg2, aes(yintercept = value), color = "white", linewidth = 1.15) +
     geom_hline(data = hg2, aes(yintercept = value), color = "#E15759", linewidth = 1, linetype = "dotted", lineend = "round") +
     
-    stat_pointinterval() +
+    stat_pointinterval(color = "#4E79A7" |> darken(.25)) +
         
     scale_y_continuous(transform = "log10",
                        breaks = scales::trans_breaks("log10", function(x) 10^x),
@@ -490,9 +496,10 @@ b <- plot_dt_2 |>
     
     theme(
         legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
+        axis.text.y = element_text(size = 12),
         
-        strip.text = element_markdown(),
+        strip.text = element_markdown(size = 12),
         
         axis.title.x = element_markdown(margin = margin(t = 10)),
         axis.title.y = element_blank(), # element_markdown(margin = margin(r = 10)),
@@ -812,13 +819,16 @@ d1_p <- ggplot() +
     theme_minimal(base_family = "Calibri") +
     theme(
         legend.title = element_blank(),
-        legend.position.inside = c(.25, .85),
+        legend.text = element_text(size = 12),
+        legend.position.inside = c(.25, .75),
         legend.position = "inside",
         
         panel.grid.major = element_line(linewidth = .3, linetype = "dashed", lineend = "round", color = "grey75"),
         
-        axis.title.x = element_markdown(margin = margin(t = 10)),
-        axis.title.y = element_markdown(margin = margin(r = 10)),
+        axis.title.x = element_markdown(margin = margin(t = 10), face = "bold", size = 12),
+        axis.title.y = element_markdown(margin = margin(r = 10), size = 12),
+        
+        axis.text = element_text(size = 12),
         
         axis.line = element_line(lineend = "round"),
         axis.ticks = element_line(lineend = "round")
@@ -881,7 +891,11 @@ d1_p <- ggplot() +
 
 library(patchwork)
 
-multi <- ((d1_p | a) / b) + plot_annotation(tag_levels = "A")
+multi <- ((d1_p | a) / b) + 
+    plot_annotation(tag_levels = "A") &
+    theme(
+        plot.tag = element_text(face = "bold", size = 18)
+    )
 
 # multi <- (free(c_1) | (a / d1_p)) + 
 #     plot_layout(widths = c(2, 1.5)) +
