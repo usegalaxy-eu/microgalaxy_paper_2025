@@ -160,20 +160,42 @@ outfolder <- "../docs/extended/"
 
 dir.create(outfolder, showWarnings = FALSE)
 
-ggsave(
-    plot = multi, filename = paste0(outfolder, "/extended_figure_1.png"),
-    width = 9, height = 10, units = "in", dpi = 600
-)
+save_plot <- function(plot, filename, w, h) {
+    
+    ggsave(
+        plot = plot, filename = paste0(filename, ".png"),
+        width = w, height = h, units = "in", dpi = 600
+    )
+    
+    ggsave(
+        plot = plot, filename = paste0(filename, ".svg"),
+        width = w, height = h, units = "in", dpi = 600
+    )
+    
+    ggsave(
+        plot = plot, filename = paste0(filename, ".pdf"),
+        width = w, height = h, units = "in", device = cairo_pdf
+    )
+    
+}
 
-ggsave(
-    plot = multi, filename = paste0(outfolder, "/extended_figure_1.svg"),
-    width = 9, height = 10, units = "in", dpi = 600
-)
+save_plot(gr1, "../docs/extended/figure_1_a", 9, 6)
+save_plot(gr2, "../docs/extended/figure_1_b", 9, 6)
 
-ggsave(
-    plot = multi, filename = paste0(outfolder, "/extended_figure_1.pdf"),
-    width = 9, height = 10, units = "in", device = cairo_pdf
-)
+# ggsave(
+#     plot = multi, filename = paste0(outfolder, "/extended_figure_1.png"),
+#     width = 9, height = 10, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = multi, filename = paste0(outfolder, "/extended_figure_1.svg"),
+#     width = 9, height = 10, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = multi, filename = paste0(outfolder, "/extended_figure_1.pdf"),
+#     width = 9, height = 10, units = "in", device = cairo_pdf
+# )
 
 ```
 
