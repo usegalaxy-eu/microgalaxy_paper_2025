@@ -71,8 +71,8 @@ dt1$`EDAM operation` <- dt1$`EDAM operation` |> str_squish()
 
 dt1 <- dt1[which(!is.na(`Suite ID`)), c("Name", "Suite ID", "EDAM topics", "EDAM operation"), with = FALSE] |> unique()
 
-dt1$`EDAM topics`    <- ifelse(dt1$`EDAM topics` == "", "Other", dt1$`EDAM topics`) |> str_wrap(15)
-dt1$`EDAM operation` <- ifelse(dt1$`EDAM operation` == "", "Other", dt1$`EDAM operation`) |> str_wrap(15)
+dt1$`EDAM topics`    <- ifelse(dt1$`EDAM topics` == "", "Other", dt1$`EDAM topics`) |> str_wrap(50)
+dt1$`EDAM operation` <- ifelse(dt1$`EDAM operation` == "", "Other", dt1$`EDAM operation`) |> str_wrap(50)
 
 edam_operations <- dt1[, by = `EDAM operation`, .(N = Name |> unique() |> length())]
 edam_topics     <- dt1[, by = `EDAM topics`, .(N = Name |> unique() |> length())]
@@ -80,8 +80,8 @@ edam_topics     <- dt1[, by = `EDAM topics`, .(N = Name |> unique() |> length())
 edam_operations <- edam_operations[which(`EDAM operation` != "Other")] 
 edam_topics     <- edam_topics[which(edam_topics != "Other")]
 
-edam_operations <- edam_operations[order(-N)] |> head(4)
-edam_topics     <- edam_topics[order(-N)] |> head(4)
+edam_operations <- edam_operations[order(-N)] |> head(14)
+edam_topics     <- edam_topics[order(-N)] |> head(14)
 
 dt1$`EDAM topics`    <- ifelse(dt1$`EDAM topics` %in% edam_topics$`EDAM topics`, dt1$`EDAM topics`, "Other")
 dt1$`EDAM operation` <- ifelse(dt1$`EDAM operation` %in% edam_operations$`EDAM operation`, dt1$`EDAM operation`, "Other")
@@ -186,10 +186,10 @@ dt1$cluster <- ifelse(
 dt1 <- dt1 |> tidyr::separate_rows("EDAM operations", sep = "\\,") |> setDT()
 
 dt1$`EDAM operations` <- dt1$`EDAM operations` |> str_squish()
-dt1$`EDAM operations` <- dt1$`EDAM operations` |> str_wrap(15) |> str_replace("DNA barcoding", "DNA\nbarcoding")
+dt1$`EDAM operations` <- dt1$`EDAM operations` |> str_wrap(50) # |> str_replace("DNA barcoding", "DNA\nbarcoding")
 
 edam_operations <- dt1[, by = `EDAM operations`, .(N = Name |> unique() |> length())]
-edam_operations <- edam_operations[order(-N)] |> head(4)
+edam_operations <- edam_operations[order(-N)] |> head(14)
 
 dt1$`EDAM operations` <- ifelse(dt1$`EDAM operations` %in% edam_operations$`EDAM operations`, dt1$`EDAM operations`, "Other")
 dt1$`EDAM operations` <- dt1$`EDAM operations` |> factor(c(edam_operations$`EDAM operations`, "Other")) 
@@ -261,6 +261,69 @@ dt2 <- dt2[order(-`No. of suites`)]
 
 ```
 
+## New plot
+
+```{r}
+
+dt3 <- dt1[, by = .(Name, cluster, `EDAM operations`), .("No. of suites" = `Suite ID` |> unique() |> length())]
+
+mm <- dt3[, c("Name", "EDAM operations", "No. of suites"), with = FALSE] |> 
+    unique() |>
+    dcast(Name ~ `EDAM operations`, value.var = "No. of suites", fill = 0) |> 
+    as.matrix(rownames = "Name")
+
+hc_y <- mm |> dist(method = "euclidean") |> hclust(method = "ward.D2")
+hc_x <- mm |> t() |> dist(method = "euclidean") |> hclust(method = "ward.D2")
+
+dt3$Name <- dt3$Name |> factor(levels = hc_y$labels[hc_y$order] |> rev())
+dt3$`EDAM operations 2` <-  dt3$`EDAM operations` |> as.character() |> factor(levels = hc_x$labels[hc_x$order] |> rev())
+
+gr3 <- dt3 |>
+    ggplot(aes(`EDAM operations 2`, Name)) +
+    geom_tile(aes(fill = `No. of suites`), color = "grey", linewidth = .25) +
+    
+    facet_grid(rows = vars(cluster), scales = "free_y", space = "free_y") +
+    
+    # facet_wrap2(vars(cluster), nrow = 1, scales = "free_x") +
+    
+    scale_x_discrete(expand = c(0, 0)) +
+    scale_y_discrete(expand = c(0, 0)) +
+    
+    scale_fill_stepsn(colors = c('#00429d', '#73a2c6', '#ffffe0', '#f4777f', '#93003a'),
+                      breaks = c(2, 4, 6, 8),
+                      guide = guide_colorsteps(barheight = unit(12, "lines"),
+                                               barwidth = unit(.5, "lines"))) +
+    
+    coord_cartesian(clip = "off", expand = TRUE) +
+    
+    theme_minimal(base_family = "Calibri") +
+    theme(
+        legend.title.position = "left",
+        legend.title = element_text(angle = 90, hjust = 0, size = 11),
+        legend.text = element_text(size = 10),
+        
+        # strip.text.x.top = element_text(angle = 45),
+        strip.text.y.right = element_text(angle = 0, hjust = 0, size = 11, face = "bold"),
+        strip.clip = "off",
+        
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        
+        panel.border = element_rect(fill = NA, color = "grey", linewidth = .25),
+        
+        axis.ticks = element_line(color = "grey", linewidth = .25),
+        
+        axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 8),
+        
+        axis.title = element_text(size = 11, face = "bold")
+    ) +
+    
+    labs(x = "EDAM operations", y = "Workflows", fill = "No. of Tool Suites")
+
+
+```
+
 ## Save plots
 
 ```{r}
@@ -269,35 +332,31 @@ outfolder <- "../results/workflows/"
 dir.create(outfolder, showWarnings = FALSE)
 dir.create("../docs/extended/", showWarnings = FALSE)
 
-ggsave(
-    plot = gr1, filename = paste0(outfolder, "/heatmap-edam.png"),
-    width = 16, height = 12, units = "in", dpi = 600
-)
 
-ggsave(
-    plot = gr1, filename = paste0(outfolder, "/heatmap-edam.svg"),
-    width = 16, height = 12, units = "in"
-)
+save_plot <- function(plot, filename, w, h) {
+    
+    ggsave(
+        plot = plot, filename = paste0(filename, ".png"),
+        width = w, height = h, units = "in", dpi = 600
+    )
+    
+    ggsave(
+        plot = plot, filename = paste0(filename, ".svg"),
+        width = w, height = h, units = "in", dpi = 600
+    )
+    
+    ggsave(
+        plot = plot, filename = paste0(filename, ".pdf"),
+        width = w, height = h, units = "in", device = cairo_pdf
+    )
+    
+}
 
-ggsave(
-    plot = gr1, filename = paste0(outfolder, "/heatmap-edam.pdf"),
-    width = 16, height = 12, units = "in", device = cairo_pdf
-)
 
-ggsave(
-    plot = gr2, filename = "../docs/extended/extended_figure_4.png",
-    width = 16, height = 8, units = "in", dpi = 600
-)
+save_plot(gr1, "../docs/extended/heatmap-edam", 16, 12)
+save_plot(gr2, "../docs/extended/extended_figure_4", 16, 8)
+save_plot(gr3, "../docs/extended/supplementary_figure_3", 9, 10)
 
-ggsave(
-    plot = gr2, filename = "../docs/extended/extended_figure_4.svg",
-    width = 16, height = 8, units = "in"
-)
-
-ggsave(
-    plot = gr2, filename = "../docs/extended/extended_figure_4.pdf",
-    width = 16, height = 8, units = "in", device = cairo_pdf
-)
 
 # writexl::write_xlsx(dt2, paste0(outfolder, "/workflows-stats.xlsx"))
 fwrite(dt2, paste0(outfolder, "/workflows-stats.tsv"), row.names = FALSE, quote = FALSE, sep = "\t")
