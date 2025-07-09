@@ -309,6 +309,57 @@ a_2 <- dt2 |>
 
 ```
 
+## New plot
+
+```{r}
+
+library(ggside)
+
+dt
+
+dt3 <- dt2[, by = .(Title, `EDAM topic`, `EDAM operation`), .(N = `Suite ID` |> unique() |> length())]
+dt4 <- dt3[, c("Title", "N"), with = FALSE] |> unique()
+
+dt4 <- dt4[order(N)]
+
+dt3$Title <- dt3$Title |> factor(levels = dt4$Title)
+dt4$Title <- dt4$Title |> factor(levels = dt4$Title)
+
+a_3_i <- dt3 |>
+    ggplot(aes(y = Title)) +
+    geom_tile(aes(x = `EDAM operation`), color = "grey", linewidth = .25) +
+    scale_x_discrete(expand = c(0, 0)) +
+    theme(
+        axis.text.x = element_text(angle = 45, hjust = 1)
+    )
+
+a_3_ii <- dt3 |>
+    ggplot(aes(y = Title)) +
+    geom_tile(aes(x = `EDAM topic`), color = "grey", linewidth = .25) +
+    scale_x_discrete(expand = c(0, 0)) +
+    theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank()
+    )
+
+a_3_iii <- dt4 |>
+    ggplot(aes(y = Title)) +
+    geom_col(aes(x = N)) +
+    theme(
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank()
+    )
+
+
+
+library(patchwork)
+
+multi <- a_3_i | a_3_ii | a_3_iii
+
+
+```
+
 
 ## EDAM ontology distribution: packcircles
 
