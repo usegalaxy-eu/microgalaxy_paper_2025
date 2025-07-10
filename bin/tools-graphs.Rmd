@@ -63,9 +63,10 @@ colnames(availability) <- availability |>
 ### Filter out duplicates
 
 ```{r}
-index <- which(availability$`Suite ID` == "srst2" & availability$`EDAM reduced topics` == "")
+index <- which(availability$`Suite ID` %in% c("msstatstmt", "srst2") & availability$`EDAM reduced topics` == "")
 
 availability <- availability[-index]
+
 ```
 
 ### Hierarchical clustering
@@ -300,7 +301,7 @@ df2 = df2[, c("Suite ID", "runs", "users", "EDAM reduced operations", "Included 
 st <- st[1:15]
 
 df2$cluster <- ifelse(df2$`EDAM reduced operations` %in% st$`EDAM reduced operations`, df2$`EDAM reduced operations` |> as.character(), "Other")
-df2$cluster <- df2$cluster |> factor(levels = c(st$`EDAM reduced operations`, "Other"))
+# df2$cluster <- df2$cluster |> factor(levels = c(st$`EDAM reduced operations`, "Other"))
 ```
 
 ### Define strip for plotting
@@ -361,8 +362,8 @@ a <- plot_dt |>
         segment.size = .3, max.overlaps = Inf, size = 3
     ) +
     
-    scale_color_manual(values = c("Both" = "#4E79A7", "Tutorials" = "#F28E2B", "Workflows" = "#E15759", "Ν/Α" = "grey"), guide = "none") +
-    scale_fill_manual(values = c("Both" = "#4E79A7", "Tutorials" = "#F28E2B", "Workflows" = "#E15759", "Ν/Α" = "grey") |> lighten(.25)) +
+    scale_color_manual(values = c("Both" = "#8e2bf2", "Tutorials" = "#F28E2B", "Workflows" = "#E15759", "Ν/Α" = "grey"), guide = "none") +
+    scale_fill_manual(values = c("Both" = "#8e2bf2", "Tutorials" = "#F28E2B", "Workflows" = "#E15759", "Ν/Α" = "grey") |> lighten(.25)) +
     scale_x_continuous(
         trans = "log10",  # expand = c(0, 0), 
         limits = c(1, 10000000), 
@@ -462,12 +463,17 @@ a <- plot_dt |>
 # 
 #     labs(x = xvar, y = yvar, fill = "EDAM operation")
 
-plot_dt_2 <- b <- df2[,-c("EDAM reduced operations"), with = FALSE] |>
+plot_dt_2 <- df2[,-c("EDAM reduced operations"), with = FALSE] |>
     unique() |> 
     melt(
         id.vars = c("Suite ID", "Included in", "cluster"),
         variable.factor = FALSE, value.factor = FALSE
     )
+
+reorder <- plot_dt_2[which(cluster != "Other"), by = .(cluster, variable), .(value = value |> median())]
+reorder <- reorder[order(-value)]
+
+plot_dt_2$cluster <- plot_dt_2$cluster |> factor(levels = c(reorder$cluster |> unique(), "Other"))
 
 plot_dt_2$variable <- plot_dt_2$variable |> str_replace_all("runs", xvar) |> str_replace_all("users", yvar)
 
@@ -475,22 +481,26 @@ hg2 <- plot_dt_2[, by = variable, .(value = value |> median())]
 
 b <- plot_dt_2 |>
     ggplot(aes(cluster, value)) +
-    
+
     geom_violin(color = NA, alpha = .5, fill = "grey") +
-    
-    geom_point(fill = "grey", color = "grey10", shape = 21, size = 1.5, stroke = .25, 
-               position = position_jitternormal(sd_y = 0, sd_x = .1)) +
     
     geom_hline(data = hg2, aes(yintercept = value), color = "white", linewidth = 1.15) +
     geom_hline(data = hg2, aes(yintercept = value), color = "#E15759", linewidth = 1, linetype = "dotted", lineend = "round") +
     
-    stat_pointinterval(color = "#4E79A7" |> darken(.25)) +
+    geom_boxplot(fill = "#4E79A7" |> lighten(.15), width = .15, outliers = FALSE) +
+    
+    geom_point(fill = "grey", color = "grey10", shape = 21, size = 1.5, stroke = .1, 
+               position = position_jitternormal(sd_y = 0, sd_x = .075)) +
+    
+
+    
+    # stat_pointinterval(color = "#4E79A7" |> darken(.25)) +
         
     scale_y_continuous(transform = "log10",
                        breaks = scales::trans_breaks("log10", function(x) 10^x),
                        labels = scales::trans_format("log10", scales::math_format(10^.x))) +
     
-    facet_wrap(vars(variable), nrow = 2, scales = "free_y") +
+    facet_wrap(vars(variable), nrow = 1, scales = "free_y") +
     
     theme_minimal(base_family = "Calibri") +
     
@@ -833,7 +843,7 @@ d1_p <- ggplot() +
         axis.line = element_line(lineend = "round"),
         axis.ticks = element_line(lineend = "round")
     ) +
-    labs(y = "Cumulative number of **tool suites**, **tutorials**, and **workflows**")
+    labs(y = "Cumulative number of<br>**tool suites**, **tutorials**, and **workflows**")
     
 
 # d1_p <- d1 |>
@@ -892,9 +902,11 @@ d1_p <- ggplot() +
 library(patchwork)
 
 multi <- ((d1_p | a) / b) + 
+    # plot_layout(heights = c(1, 2)) +
     plot_annotation(tag_levels = "A") &
     theme(
-        plot.tag = element_text(face = "bold", size = 18)
+        plot.tag = element_text(face = "bold", size = 18),
+        plot.margin = margin(15, 15, 15, 15)
     )
 
 # multi <- (free(c_1) | (a / d1_p)) + 
