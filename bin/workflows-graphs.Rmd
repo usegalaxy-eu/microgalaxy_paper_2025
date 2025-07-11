@@ -152,7 +152,7 @@ gr1 <- dt1 |>
 
 ```{r}
 
-dt1 <- workflows_dt[which(!is.na(`Suite ID`)), c("Name", "Suite ID", "Source", "Projects", "EDAM operations"), with = FALSE] |> unique()
+dt1 <- workflows_dt[which(!is.na(`Suite ID`)), c("Name", "Suite ID", "Source", "Projects", "EDAM operations", "EDAM topics"), with = FALSE] |> unique()
 
 dt1$Source   <- ifelse(
     dt1$Source == "WorkflowHub", "WorkflowHub", 
@@ -264,6 +264,65 @@ dt2 <- dt2[order(-`No. of suites`)]
 ## New plot
 
 ```{r}
+
+dt3 <- workflows_dt[which(!is.na(`Suite ID`)), c("Name", "Suite ID", "Source", "Projects", "EDAM operations", "EDAM topics"), with = FALSE] |> unique()
+
+dt3$Source   <- ifelse(
+    dt3$Source == "WorkflowHub", "WorkflowHub", 
+    ifelse(
+        dt3$Source == "dev.WorkflowHub", "GTN", 
+        "Public Servers"
+    )
+)
+
+dt3$Projects <- ifelse(
+    dt3$Projects == "Intergalactic Workflow Commission (IWC)", "IWC",
+    ifelse(
+        dt3$Projects == "Galaxy Training Network", "GTN", 
+        "Other Projects"
+    )
+) |> str_wrap(22)
+
+dt3$cluster <- paste0(dt3$Source, "; ", dt3$Projects)
+
+dt3$cluster <- ifelse(
+    dt3$cluster == "WorkflowHub; IWC", "IWC on WorkflowHub",
+    ifelse(
+        dt3$cluster == "WorkflowHub; Other Projects", "Other WorkflowHub workflows", 
+        ifelse(
+            dt3$cluster == "Public Servers; Other Projects", "Public server workflows", 
+            "Workflows related to GTN tutorials"
+        )
+    )
+) |> str_wrap(15)
+
+
+dt1 <- dt1 |> tidyr::separate_rows("EDAM operations", sep = "\\,") |> setDT()
+
+dt1$`EDAM operations` <- dt1$`EDAM operations` |> str_squish()
+dt1$`EDAM operations` <- dt1$`EDAM operations` |> str_wrap(50) # |> str_replace("DNA barcoding", "DNA\nbarcoding")
+
+edam_operations <- dt1[, by = `EDAM operations`, .(N = Name |> unique() |> length())]
+edam_operations <- edam_operations[order(-N)] |> head(14)
+
+dt1$`EDAM operations` <- ifelse(dt1$`EDAM operations` %in% edam_operations$`EDAM operations`, dt1$`EDAM operations`, "Other")
+dt1$`EDAM operations` <- dt1$`EDAM operations` |> factor(c(edam_operations$`EDAM operations`, "Other")) 
+
+dt1$value <- 1
+
+mm <- dt1[, c("Name", "Suite ID", "value"), with = FALSE] |> 
+    unique() |> 
+    dcast(Name ~ `Suite ID`, value.var = "value", fill = 0) |> 
+    as.matrix(rownames = "Name")
+
+hc_y <- mm |> dist(method = "binary") |> hclust(method = "ward.D2")
+hc_x <- mm |> t() |> dist(method = "binary") |> hclust(method = "ward.D2")
+
+
+dt1$Name <- dt1$Name |> factor(levels = hc_y$labels[hc_y$order] |> rev())
+dt1$`Suite ID` <- dt1$`Suite ID` |> factor(levels = hc_x$labels[hc_x$order])
+
+
 
 dt3 <- dt1[, by = .(Name, cluster, `EDAM operations`), .("No. of suites" = `Suite ID` |> unique() |> length())]
 
