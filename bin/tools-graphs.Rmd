@@ -199,39 +199,31 @@ c_2 <- p |>
 ### Save plots
 
 ```{r}
-# outfolder <- "../results/tools/availability-heatmap"
-# 
-# dir.create(outfolder)
-# 
-# ggsave(
-#     plot = c_1, filename = paste0(outfolder, "/heatmap-1.png"),
-#     width = 5, height = 18, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = c_1, filename = paste0(outfolder, "/heatmap-1.svg"),
-#     width = 5, height = 18, units = "in"
-# )
-# 
-# ggsave(
-#     plot = c_1, filename = paste0(outfolder, "/heatmap-1.pdf"),
-#     width = 5, height = 18, units = "in", device = cairo_pdf
-# )
-# 
-# ggsave(
-#     plot = c_2, filename = paste0(outfolder, "/heatmap-2.png"),
-#     width = 5, height = 18, units = "in", dpi = 600
-# )
-# 
-# ggsave(
-#     plot = c_2, filename = paste0(outfolder, "/heatmap-2.svg"),
-#     width = 5, height = 18, units = "in"
-# )
-# 
-# ggsave(
-#     plot = c_2, filename = paste0(outfolder, "/heatmap-2.pdf"),
-#     width = 5, height = 18, units = "in", device = cairo_pdf
-# )
+outfolder <- "../docs/extended/"
+
+dir.create(outfolder, showWarnings = FALSE)
+
+save_plot <- function(plot, filename, w, h) {
+    
+    ggsave(
+        plot = plot, filename = paste0(filename, ".png"),
+        width = w, height = h, units = "in", dpi = 600
+    )
+    
+    ggsave(
+        plot = plot, filename = paste0(filename, ".svg"),
+        width = w, height = h, units = "in", dpi = 600
+    )
+    
+    ggsave(
+        plot = plot, filename = paste0(filename, ".pdf"),
+        width = w, height = h, units = "in", device = cairo_pdf
+    )
+    
+}
+
+save_plot(c_1, "../docs/extended/supplementary_figure_2_v1", 6, 18)
+save_plot(c_2, "../docs/extended/supplementary_figure_2_v2", 18, 6)
 ```
 
 
