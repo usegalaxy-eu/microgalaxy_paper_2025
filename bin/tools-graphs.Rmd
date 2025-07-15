@@ -334,9 +334,9 @@ plot_dt <- df2[, c("Suite ID", "runs", "users", "Included in"), with = FALSE] |>
 a <- plot_dt |>
     ggplot(aes(runs, users)) +
     
-    geom_hdr_lines(data = plot_dt[which(`Included in` %in% c("Both", "Tutorials", "Workflows"))],
-                   aes(runs, users, color = `Included in`),
-                   probs = c(.75, 0.5), linewidth = .75) +
+    # geom_hdr_lines(data = plot_dt[which(`Included in` %in% c("Both", "Tutorials", "Workflows"))],
+    #                aes(runs, users, color = `Included in`),
+    #                probs = c(.75, 0.5), linewidth = .75) +
     
     # geom_hdr_rug(aes(fill = `Included in`, group = `Included in`), length = unit(.5, "lines")) +
     # geom_mark_ellipse(aes(fill = `Included in`, label = `Included in`, filter = `Included in` %in% c("Both", "Tutorials", "Workflows"))) +
@@ -348,7 +348,7 @@ a <- plot_dt |>
     
     geom_text_repel(
         data = hg0, aes(label = `Suite ID`),
-        bg.r = .05, bg.color = "grey96", fontface = "bold", family = "Calibri", box.padding = .5,
+        bg.r = .075, bg.color = "grey96", fontface = "bold", family = "Calibri", box.padding = .5,
         segment.size = .3, max.overlaps = Inf, size = 3
     ) +
 
@@ -517,7 +517,10 @@ b <- plot_dt_2 |>
         axis.title.y = element_blank(), # element_markdown(margin = margin(r = 10)),
         
         # axis.ticks = element_line(linewidth = .3),
-        panel.grid.major = element_line(linewidth = .3, linetype = "dashed", lineend = "round", color = "grey75"),
+        panel.grid.major.y = element_line(linewidth = .3, linetype = "dashed", lineend = "round", color = "grey75"),
+        
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
         
         # panel.border = element_rect(linewidth = .3, fill = NA),
         
