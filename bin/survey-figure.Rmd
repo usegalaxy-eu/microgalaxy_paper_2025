@@ -294,6 +294,9 @@ gr <- df_plot |>
     ) +
     
     labs(x = "Number of Responses", fill = "Proportion")
+
+df_plot$question2 <- NULL
+
 ```
 
 ### Citations part
@@ -325,7 +328,7 @@ p0$Topics <- "All"
 
 gr1_df <- rbind(p0, p1)
 
-gr1_df$counts2 <- log10(gr1_df$counts)
+# gr1_df$counts2 <- log10(gr1_df$counts)
 
 gr1_df$Topics <- gr1_df$Topics |> factor(levels = c("Ecosystem Dynamics & Biodiversity",
                                                     "Ecosystem Dynamics & Biodiversity, Health & Disease",
@@ -427,6 +430,7 @@ save_plot <- function(plot, filename, w, h) {
 }
 
 save_plot(multi, "../docs/extended/figure_1", 16, 8)
+fwrite(df_plot, "../docs/extended/survey_descriptive_stats.txt", sep = "\t", row.names = FALSE, quote = FALSE)
 ```
 
 
