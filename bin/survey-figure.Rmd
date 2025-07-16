@@ -361,7 +361,7 @@ gr1 <- gr1_df |>
     
     scale_fill_manual(values = c("All" = "grey" |> lighten(.25),
                                  "Ecosystem Dynamics & Biodiversity" = "#7ca07aff",
-                                 "Ecosystem Dynamics & Biodiversity, Health & Disease" = "#e19a57",
+                                 "Ecosystem Dynamics & Biodiversity, Health & Disease" = "#BCB45D",
                                  "Health & Disease" = "#fbc73fff")) +
     # scale_color_manual(values = c("All" = "#4E79A7" |> lighten(.25), 
     #                               "Microbial" = "#E15759" |> darken(.3))) +
