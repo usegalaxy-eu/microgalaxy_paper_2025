@@ -338,7 +338,7 @@ gr1_df$Topics <- gr1_df$Topics |> factor(levels = c("Ecosystem Dynamics & Biodiv
 gr1 <- gr1_df |>
     ggplot(aes(year, counts)) +
     geom_stream(aes(fill = Topics), color = "grey25", linewidth = .25, type = "ridge") +
-    geom_vline(xintercept = c(2010, 2015, 2017, 2020, 2022), linewidth = .5, linetype = "dotted", lineend = "round", color = "white") +
+    geom_vline(xintercept = c(2010, 2015, 2017, 2020, 2023), linewidth = .5, linetype = "dotted", lineend = "round", color = "white") +
 
     # geom_stream(aes(fill = Topics), type = "ridge") +
     
@@ -354,8 +354,8 @@ gr1 <- gr1_df |>
     # geom_point(aes(color = Topics), size = 4.65 - 1.23,
     #            position = position_dodge(width = .9)) +
     
-    scale_x_continuous(expand = c(0, 0), breaks = c(2006, 2010, 2015, 2017, 2020, 2022, 2025)) +
-    scale_y_continuous(breaks = seq(100, 1000, by = 100), expand = c(0, 0), limits = c(0, 1050)) +
+    scale_x_continuous(expand = c(0, 0), breaks = c(2006, 2010, 2015, 2017, 2020, 2023, 2025)) +
+    scale_y_continuous(breaks = seq(100, 1350, by = 100), expand = c(0, 0), limits = c(0, 1350)) +
     # scale_y_continuous(expand = c(0, 0), breaks = c(10, 20, 50, 100, 200, 500, 1000)) +
     # scale_y_continuous(expand = c(0, 0), transform = "log2", limits = c(0, 1100), breaks = seq(200, 1000, by = 200)) +
     
