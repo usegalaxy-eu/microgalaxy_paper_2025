@@ -1,0 +1,29 @@
+question	ylabel	N	Prop	label
+What is your main target?	Bacteria	55	0.443548387096774	44.35%
+What is your main target?	Eukaryotes	28	0.225806451612903	22.58%
+What is your main target?	Mixed Communities	24	0.193548387096774	19.35%
+What is your main target?	Other	9	0.0725806451612903	7.26%
+What is your main target?	Virus	8	0.0645161290322581	6.45%
+Which techniques do you use?	Single Organism Genomics	59	0.238866396761134	23.89%
+Which techniques do you use?	Metagenomics	57	0.230769230769231	23.08%
+Which techniques do you use?	(Meta)Transcriptomics	55	0.222672064777328	22.27%
+Which techniques do you use?	Metabarcoding	37	0.149797570850202	14.98%
+Which techniques do you use?	(Meta)Proteomics	22	0.0890688259109312	8.91%
+Which techniques do you use?	Metabolomics	9	0.0364372469635628	3.64%
+Which techniques do you use?	Other	8	0.0323886639676113	3.24%
+Which analysis do you use or would like to do?	Functional Analysis	81	0.126760563380282	12.68%
+Which analysis do you use or would like to do?	Gene Identification	79	0.123630672926448	12.36%
+Which analysis do you use or would like to do?	Assembly	70	0.109546165884194	10.95%
+Which analysis do you use or would like to do?	Comparative Analyses	65	0.101721439749609	10.17%
+Which analysis do you use or would like to do?	Phylogenetic Tree Construction	60	0.0938967136150235	9.39%
+Which analysis do you use or would like to do?	Taxonomic Profiling	58	0.0907668231611894	9.08%
+Which analysis do you use or would like to do?	Single Nucleotide Polymorphism (SNP) Identification	49	0.0766823161189358	7.67%
+Which analysis do you use or would like to do?	Antimicrobial Resistance Detection	47	0.0735524256651017	7.36%
+Which analysis do you use or would like to do?	Pathogen Tracking	37	0.0579029733959311	5.79%
+Which analysis do you use or would like to do?	Metagenome Assembled Genome (MAG) Building	34	0.05320813771518	5.32%
+Which analysis do you use or would like to do?	Combination Of Multiomic Approaches	31	0.0485133020344288	4.85%
+Which analysis do you use or would like to do?	Predictive Metagenomics	22	0.0344287949921753	3.44%
+Which analysis do you use or would like to do?	Other	6	0.00938967136150235	0.94%
+If the tools, platforms or databases from the previous question could be deployed in Galaxy would use prefer to use in there?	Yes	101	0.776923076923077	77.69%
+If the tools, platforms or databases from the previous question could be deployed in Galaxy would use prefer to use in there?	No	15	0.115384615384615	11.54%
+If the tools, platforms or databases from the previous question could be deployed in Galaxy would use prefer to use in there?	Unknown	14	0.107692307692308	10.77%

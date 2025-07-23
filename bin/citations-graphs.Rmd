@@ -38,25 +38,32 @@ library(patchwork)
 ## Input data
 
 ```{r}
-years            <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/years.csv")
-methods          <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/methods.csv")
-target_technical <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/technical_target.csv")
-target_organisms <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/targeted_organisms.csv")
+# years            <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/years.csv")
+# methods          <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/methods.csv")
+# target_technical <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/technical_target.csv")
+# target_organisms <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/targeted_organisms.csv")
 
-years$year <- seq(2005, 2026)
-years <- years |> melt(id.vars = "year", value.factor = FALSE, variable.factor = FALSE)
-years$variable <- years$variable |> str_to_title()
+all_papers <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/all_papers.csv")
+microbial_papers <- fread("https://raw.githubusercontent.com/usegalaxy-eu/microgalaxy_paper_2025/refs/heads/main/results/citations/microbial_papers.csv")
 
 
-methods$cluster          <- "Methods"
-target_organisms$cluster <- "Targetted organisms"
-target_technical$cluster <- "Technical target"
+all_papers <- all_papers[which(year >= 2006)]
+microbial_papers <- microbial_papers[which(year >= 2006)]
 
-p0 <- rbind(methods, target_organisms, target_technical)
-
-colnames(p0) <- c("variable", "counts", "perc", "cluster")
-
-p0$perc <- p0$perc / 100
+# years$year <- seq(2005, 2026)
+# years <- years |> melt(id.vars = "year", value.factor = FALSE, variable.factor = FALSE)
+# years$variable <- years$variable |> str_to_title()
+# 
+# 
+# methods$cluster          <- "Methods"
+# target_organisms$cluster <- "Targetted organisms"
+# target_technical$cluster <- "Technical target"
+# 
+# p0 <- rbind(methods, target_organisms, target_technical)
+# 
+# colnames(p0) <- c("variable", "counts", "perc", "cluster")
+# 
+# p0$perc <- p0$perc / 100
 
 ```
 
@@ -64,91 +71,56 @@ p0$perc <- p0$perc / 100
 ## Barplots 
 
 ```{r}
+library(tidytext)
 
-gr1 <- years |>
-    ggplot(aes(year, value)) +
-    
-    geom_point(aes(fill = variable), color = "grey25", 
-               shape = 21, size = 5.3, stroke = .25, 
-               position = position_dodge(width = .9)) +
-    
-    geom_col(aes(fill = variable), color = "grey25", 
-             linewidth = .15, 
-             position = position_dodge(width = .9)) +
-    
-    geom_point(aes(color = variable),
-               size = 4.65,
-               position = position_dodge(width = .9)) +
-    
-    scale_x_continuous(expand = c(0, 0)) +
-    scale_y_continuous(expand = c(0, 0), limits = c(0, 1200), breaks = seq(200, 1000, by = 200)) +
-    
-    scale_fill_manual(values = c("All" = "#4E79A7" |> lighten(.25), "Microbial" = "#E15759" |> darken(.3))) +
-    scale_color_manual(values = c("All" = "#4E79A7" |> lighten(.25), "Microbial" = "#E15759" |> darken(.3))) +
-    
-    theme_minimal(base_family = "Calibri") +
-    
-    theme(
-        legend.position = c(.15, .75),
-        legend.title = element_blank(),
-        
-        axis.line = element_line(lineend = "round"),
-        axis.ticks = element_line(lineend = "round"),
-        
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        
-        panel.grid.minor.y = element_line(linetype = "dotted", lineend = "round"),
-        
-        axis.title.x = element_text(margin = margin(t = 10)),
-        axis.title.y = element_markdown(margin = margin(r = 10))
-    ) +
-    
-    labs(x = "Year", y = "**Number of publications**<br>citing Galaxy papers")
+gr_df <- microbial_papers |> 
+    subset(select = c("year", "Targeted organisms", "Technical target", "Methods")) |>
+    melt(id.vars = "year", variable.factor = FALSE, value.factor = FALSE)
 
+gr_df <- gr_df |> tidyr::separate_rows("value", sep = "\\,") |> setDT()
 
-gr2 <- p0 |>
-    ggplot(aes(reorder_within(variable, -perc, cluster), perc)) +
-    
-    geom_point(fill = "#4E79A7" |> lighten(.25), color = "grey25", 
-               shape = 21, size = 6.3, stroke = .25) +
-    
+gr_df$value <- gr_df$value |> str_squish()
+
+gr_df <- gr_df |> subset(subset = value != "")
+gr_df <- gr_df[, by = .(variable, value), .N]
+
+gr_df[, by = variable, Freq := N / sum(N)]
+
+gr <- gr_df |> 
+    ggplot(aes(reorder_within(value, -Freq, variable), Freq)) +
+    geom_point(fill = "#4E79A7" |> lighten(.25), color = "grey25", shape = 21, size = 5.3+.4, stroke = .25) +
     geom_col(width = .75, fill = "#4E79A7" |> lighten(.25), color = "grey25", linewidth = .15) +
-    
-    geom_point(color = "#4E79A7" |> lighten(.25), size = 5.63) +
-    
-    scale_y_continuous(expand = c(0, 0), limits = c(0, 0.13), labels = scales::percent, breaks = seq(.01, .12, by = .02)) +
+    geom_point(color = "#4E79A7" |> lighten(.25), size = 4.63+.4) +
     scale_x_reordered() +
-    
-    facet_grid2(cols = vars(cluster), space = "free_x", scales = "free_x", axes = "all") +
-    
+    scale_y_continuous(labels = scales::percent, limits = c(0, .4), expand = c(0, 0)) +
+    facet_grid2(cols = vars(variable), scales = "free_x", space = "free_x", axes = "all") + 
     theme_minimal(base_family = "Calibri") +
-    
     theme(
         axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
-        
+
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
-        
+
         panel.grid.minor.y = element_line(linetype = "dotted", lineend = "round"),
-        
+
         axis.line = element_line(lineend = "round"),
         axis.ticks = element_line(lineend = "round"),
-        
-        strip.text = element_text(face = "bold"),
-        
+
+        strip.text = element_text(face = "bold", size = 12, margin = margin(b = 10)),
+
         axis.title.x = element_blank(), # element_text(margin = margin(t = 10)),
         axis.title.y = element_markdown(margin = margin(r = 10))
     ) +
-    
+
     labs(x = "Target", y = "**Percentage in the microbial related papers**<br>citing Galaxy papers")
 
 
-multi <- (gr1 / gr2) + 
-    plot_annotation(tag_levels = "A") &
-    theme(
-        plot.tag = element_text(size = 18, face = "bold", family = "Calibri")
-    )
+
+# multi <- (gr1 / gr2) + 
+#     plot_annotation(tag_levels = "A") &
+#     theme(
+#         plot.tag = element_text(size = 18, face = "bold", family = "Calibri")
+#     )
 
 ```
 
@@ -160,20 +132,41 @@ outfolder <- "../docs/extended/"
 
 dir.create(outfolder, showWarnings = FALSE)
 
-ggsave(
-    plot = multi, filename = paste0(outfolder, "/extended_figure_1.png"),
-    width = 9, height = 10, units = "in", dpi = 600
-)
+save_plot <- function(plot, filename, w, h) {
+    
+    ggsave(
+        plot = plot, filename = paste0(filename, ".png"),
+        width = w, height = h, units = "in", dpi = 600
+    )
+    
+    ggsave(
+        plot = plot, filename = paste0(filename, ".svg"),
+        width = w, height = h, units = "in", dpi = 600
+    )
+    
+    ggsave(
+        plot = plot, filename = paste0(filename, ".pdf"),
+        width = w, height = h, units = "in", device = cairo_pdf
+    )
+    
+}
 
-ggsave(
-    plot = multi, filename = paste0(outfolder, "/extended_figure_1.svg"),
-    width = 9, height = 10, units = "in", dpi = 600
-)
+save_plot(gr, "../docs/extended/supplementary_figure_1", 8, 6)
 
-ggsave(
-    plot = multi, filename = paste0(outfolder, "/extended_figure_1.pdf"),
-    width = 9, height = 10, units = "in", device = cairo_pdf
-)
+# ggsave(
+#     plot = multi, filename = paste0(outfolder, "/extended_figure_1.png"),
+#     width = 9, height = 10, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = multi, filename = paste0(outfolder, "/extended_figure_1.svg"),
+#     width = 9, height = 10, units = "in", dpi = 600
+# )
+# 
+# ggsave(
+#     plot = multi, filename = paste0(outfolder, "/extended_figure_1.pdf"),
+#     width = 9, height = 10, units = "in", device = cairo_pdf
+# )
 
 ```
 
